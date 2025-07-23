@@ -1,14 +1,16 @@
-<template>
-  <div class="min-h-screen">
-    <!-- Header -->
-    <HomeAppBar />
+<script setup lang="ts">
 
-    <!-- Hero sekce -->
-    <UContainer class="py-6">
+</script>
+
+<template>
+  <GradientBackground class="col-start-1 row-start-1 max-w-screen min-h-screen" color="green">
+     <HomeAppBar />
+
+     <UContainer class="py-6">
       <div class="text-center max-w-4xl mx-auto">
         <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
           Pokročilý AI asistent pro 
-          <span class="text-red-600 dark:text-primary">kyberbezpečnost</span>
+          <GradientText text="kyberbezpečnost" />
         </h2>
         <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">
           Komplexní platforma pro analýzu hrozeb, incident response a bezpečnostní vzdělávání. 
@@ -17,10 +19,8 @@
       </div>
     </UContainer>
 
-    <!-- Funkce -->
     <UContainer class="py-6">
       <div class="grid md:grid-cols-2 gap-8">
-        <!-- Analýza souborů a dat -->
         <UCard>
           <template #header>
             <IconHeader icon="heroicons:magnifying-glass" text="Analýza souborů a dat" color="red" />
@@ -79,7 +79,6 @@
           </div>
         </UCard>
 
-        <!-- Incident Response -->
         <UCard>
           <template #header>
             <IconHeader icon="heroicons:exclamation-triangle" text="Incident Response" color="red" />
@@ -108,7 +107,6 @@
           </div>
         </UCard>
 
-        <!-- Vzdělávání a databáze -->
         <UCard class="md:col-span-2">
           <template #header>
             <IconHeader icon="heroicons:academic-cap" text="Vzdělávání a databáze" color="red" />
@@ -139,7 +137,6 @@
       </div>
     </UContainer>
 
-    <!-- PWA -->
     <UContainer class="py-6">
       <UCard class="mb-8">
         <template #header>
@@ -204,7 +201,6 @@
       </UCard>
     </UContainer>
 
-    <!-- Deployment info -->
     <UContainer class="py-4">
       <UCard>
         <template #header>
@@ -249,5 +245,5 @@
         </div>
       </UCard>
     </UContainer>
-  </div>
+  </GradientBackground>
 </template>
