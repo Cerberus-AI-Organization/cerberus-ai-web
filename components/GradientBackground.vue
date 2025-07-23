@@ -1,5 +1,5 @@
 <template>
-  <div class="grid justify-center bg-white dark:bg-black relative overflow-hidden">
+  <div class="grid bg-white dark:bg-black relative overflow-hidden">
     <div class="z-10 col-start-1 row-start-1">
       <slot></slot>
     </div>
