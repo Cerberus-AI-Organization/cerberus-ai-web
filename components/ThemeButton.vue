@@ -21,10 +21,10 @@ const toggleColorMode = () => {
   const nextIndex = (currentIndex + 1) % modes.length
   colorMode.preference = modes[nextIndex]
 
-  const toast = useToast()
-  toast.add({
-    title: colorMode.preference
-  })
+  // const toast = useToast()
+  // toast.add({
+  //   title: colorMode.preference
+  // })
 }
 
 const getIcon = () => {
