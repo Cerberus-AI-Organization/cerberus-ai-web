@@ -6,7 +6,7 @@
   <GradientBackground class="col-start-1 row-start-1 max-w-screen min-h-screen" color="green">
      <HomeAppBar />
 
-     <UContainer class="py-6">
+     <UContainer class="py-16">
       <div class="text-center max-w-4xl mx-auto">
         <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
           Pokročilý AI asistent pro 
