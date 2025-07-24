@@ -3,8 +3,8 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg">
-            <NuxtImg 
-              src="/icon.png" 
+            <img 
+              src="/images/icon.png"
               alt="CerberusAI Logo" 
               class="w-full h-full object-cover" /> 
           </div>
