@@ -4,7 +4,7 @@
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg">
             <img 
-              src="/images/icon.png"
+              src="/icon.png"
               alt="CerberusAI Logo" 
               class="w-full h-full object-cover" /> 
           </div>
