@@ -30,7 +30,7 @@ export const ThemeProvider = ({children}: { children: React.ReactNode }) => {
         return {
           text: "#ffffff",
           textSecondary: "#8c8c8c",
-          accent: "#1890ff",
+          accent: "#5b38f8",
           background: "#000000",
           backgroundSecondary: "#141414",
           selected: "#292929",
@@ -39,7 +39,7 @@ export const ThemeProvider = ({children}: { children: React.ReactNode }) => {
         return {
           text: "#000000",
           textSecondary: "#595959",
-          accent: "#1890ff",
+          accent: "#5b38f8",
           background: "#f0f2f5",
           backgroundSecondary: "#ffffff",
           selected: "#e6f7ff",
@@ -60,7 +60,7 @@ export const ThemeProvider = ({children}: { children: React.ReactNode }) => {
       localStorage.setItem('theme', 'light');
       setThemeColors(getTheme());
     }
-  }, [currentTheme, getTheme])
+  }, [currentTheme])
 
   return (
     <ThemeContext.Provider value={{
