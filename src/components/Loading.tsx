@@ -1,5 +1,6 @@
 import {Result, Spin} from 'antd';
 import {LoadingOutlined} from '@ant-design/icons';
+import {useTheme} from "../states/ThemeContext.tsx";
 
 type LoadingProps = {
   title?: string;
@@ -7,7 +8,9 @@ type LoadingProps = {
   extra?: React.ReactNode;
 }
 
-function Loading({ title, description, extra }: LoadingProps) {
+function Loading({title, description, extra}: LoadingProps) {
+  const {themeColors} = useTheme();
+
   return (
     <div style={{
       display: 'flex',
@@ -16,13 +19,22 @@ function Loading({ title, description, extra }: LoadingProps) {
       minHeight: '100vh',
       padding: '1rem',
       boxSizing: 'border-box',
+      backgroundColor: themeColors.backgroundSecondary,
     }}>
       <Result
         icon={
-          <Spin indicator={<LoadingOutlined style={{fontSize: 48, color: 'orange'}}  spin />} />
+          <Spin indicator={<LoadingOutlined style={{fontSize: 48, color: themeColors.accent}} spin/>}/>
         }
-        title={title ? title : 'Loading...'}
-        subTitle={description ? description : 'Please wait while we load the page.'}
+        title={
+          <span style={{color: themeColors.text}}>
+            {title ? title : 'Loading...'}
+          </span>
+        }
+        subTitle={
+          <span style={{color: themeColors.text}}>
+            {description ? description : 'Please wait while we load the page.'}
+          </span>
+        }
         extra={extra}
       />
     </div>
