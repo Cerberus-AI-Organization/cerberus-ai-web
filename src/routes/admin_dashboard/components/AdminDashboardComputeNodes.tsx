@@ -305,7 +305,14 @@ function AdminDashboardComputeNodes() {
                   <TableCell>{node.ip}</TableCell>
                   <TableCell>{node.port}</TableCell>
                   <TableCell>{node.status}</TableCell>
-                  <TableCell>{new Date(node.created_at).toUTCString()}</TableCell>
+                  <TableCell>{new Date(node.created_at).toLocaleString(navigator.language, {
+                    year: "numeric",
+                    month: "long",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                  })}</TableCell>
                   <TableCell className="text-right">
                     <button
                       className="hover:text-foreground/70 mx-2"
@@ -480,7 +487,7 @@ function AdminDashboardComputeNodes() {
       </Dialog>
 
       <Dialog open={isPullOpen} onOpenChange={setPullOpen}>
-        <DialogContent onInteractOutside={(e) => {
+        <DialogContent showCloseButton={!isPulling} onInteractOutside={(e) => {
           if (isPulling) {
             e.preventDefault();
           }
@@ -503,12 +510,34 @@ function AdminDashboardComputeNodes() {
                   <div>Downloaded: {(downloadStats.downloaded / 1024 / 1024).toFixed(2)} MB
                     of {(downloadStats.total / 1024 / 1024).toFixed(2)} MB
                   </div>
-                  <div>Remaining time: {(() => {
-                    const elapsedMs = Date.now() - downloadStats.startTime;
-                    const bytesPerMs = downloadStats.downloaded / elapsedMs;
-                    const remainingMs = (downloadStats.total - downloadStats.downloaded) / bytesPerMs;
-                    return `${Math.ceil(remainingMs / 1000)} seconds`;
-                  })()}</div>
+                  <div>
+                    Remaining time:{' '}
+                    {(() => {
+                      const { startTime, downloaded, total } = downloadStats;
+
+                      const elapsedMs = Date.now() - startTime;
+                      if (elapsedMs <= 0 || downloaded <= 0 || total <= 0 || downloaded >= total) {
+                        return 'Calculating...';
+                      }
+
+                      // Compute bytes per second instead of per millisecond
+                      const bytesPerSec = downloaded / (elapsedMs / 1000);
+
+                      // Avoid division by zero or tiny numbers
+                      if (bytesPerSec < 1) return 'Calculating...';
+
+                      const remainingBytes = total - downloaded;
+                      const remainingSeconds = Math.ceil(remainingBytes / bytesPerSec);
+
+                      const hours = Math.floor(remainingSeconds / 3600);
+                      const minutes = Math.floor((remainingSeconds % 3600) / 60);
+                      const seconds = remainingSeconds % 60;
+
+                      if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+                      if (minutes > 0) return `${minutes}m ${seconds}s`;
+                      return `${seconds}s`;
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
@@ -516,11 +545,6 @@ function AdminDashboardComputeNodes() {
               disabled={!selectedNode || !modelName || isPulling}
               onClick={async () => {
                 setIsPulling(true);
-                setDownloadStats({
-                  downloaded: 0,
-                  total: 0,
-                  startTime: Date.now()
-                });
                 if (!selectedNode) return;
                 try {
                   const response = await fetch(
@@ -539,6 +563,13 @@ function AdminDashboardComputeNodes() {
 
                   const reader = response.body?.getReader();
                   if (!reader) throw new Error("No reader available");
+
+                  setDownloadStatus("Starting pull...");
+                  setDownloadStats({
+                    downloaded: 0,
+                    total: 0,
+                    startTime: Date.now()
+                  });
 
                   while (true) {
                     const {done, value} = await reader.read();
@@ -563,14 +594,14 @@ function AdminDashboardComputeNodes() {
                           setDownloadStats(prev => ({
                             ...prev,
                             downloaded: data.completed,
-                            total: data.total
+                            total: data.total,
                           }));
                         } else {
-                          setDownloadStats({
+                          setDownloadStats(prev => ({
+                            ...prev,
                             downloaded: 0,
                             total: 0,
-                            startTime: 0
-                          });
+                          }));
                         }
                       } catch {
                         console.error('Failed to parse line:', line);
@@ -580,7 +611,6 @@ function AdminDashboardComputeNodes() {
 
                   toast.success("Model pulled successfully");
                   setIsPulling(false);
-                  setPullOpen(false);
                 } catch {
                   toast.error("Failed to pull model");
                 }
