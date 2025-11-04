@@ -77,7 +77,7 @@ function AdminDashboardComputeNodes() {
 
   async function fetchNodes() {
     try {
-      const response = await fetch("http://localhost:8080/compute-nodes", {
+      const response = await fetch("/api/compute-nodes", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -115,7 +115,7 @@ function AdminDashboardComputeNodes() {
 
   const handleCreate = async () => {
     try {
-      const response = await fetch("http://localhost:8080/compute-nodes", {
+      const response = await fetch("/api/compute-nodes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +140,7 @@ function AdminDashboardComputeNodes() {
     if (!selectedNode) return;
     try {
       const response = await fetch(
-        `http://localhost:8080/compute-nodes/${selectedNode.id}`,
+        `/api/compute-nodes/${selectedNode.id}`,
         {
           method: "PUT",
           headers: {
@@ -167,7 +167,7 @@ function AdminDashboardComputeNodes() {
     if (!selectedNode) return;
     try {
       const response = await fetch(
-        `http://localhost:8080/compute-nodes/${selectedNode.id}`,
+        `/api/compute-nodes/${selectedNode.id}`,
         {
           method: "DELETE",
           headers: {
@@ -316,7 +316,7 @@ function AdminDashboardComputeNodes() {
                         }
                         setSelectedNode(node);
                         try {
-                          const response = await fetch(`http://localhost:8080/compute-nodes/${node.id}/models`, {
+                          const response = await fetch(`/api/compute-nodes/${node.id}/models`, {
                             headers: {Authorization: `Bearer ${token}`},
                           });
                           if (response.ok) {
@@ -445,7 +445,7 @@ function AdminDashboardComputeNodes() {
                         <AlertDialogAction onClick={async () => {
                           try {
                             const response = await fetch(
-                              `http://localhost:8080/compute-nodes/${selectedNode?.id}/models/${model.name}`,
+                              `/api/compute-nodes/${selectedNode?.id}/models/${model.name}`,
                               {
                                 method: "DELETE",
                                 headers: {
@@ -524,7 +524,7 @@ function AdminDashboardComputeNodes() {
                 if (!selectedNode) return;
                 try {
                   const response = await fetch(
-                    `http://localhost:8080/compute-nodes/${selectedNode.id}/models/pull`,
+                    `/api/compute-nodes/${selectedNode.id}/models/pull`,
                     {
                       method: "POST",
                       headers: {

@@ -28,7 +28,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
   const fetchCurrentUser = async () => {
     try {
       console.log("aaaa");
-      const response = await fetch('http://localhost:8080/auth/me', {
+      const response = await fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -45,7 +45,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('http://localhost:8080/auth/login', {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
