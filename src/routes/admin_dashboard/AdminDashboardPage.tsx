@@ -1,107 +1,116 @@
-import {Avatar, Button, Dropdown, Flex, Layout, Menu, type MenuProps, Space, Typography} from "antd";
-import {UserOutlined, LogoutOutlined, TeamOutlined, MenuFoldOutlined, MenuUnfoldOutlined} from '@ant-design/icons';
-import {Content, Header} from "antd/es/layout/layout";
-import Sider from "antd/es/layout/Sider";
-
-const {Title} = Typography;
-import {useAuth} from "../../states/AuthContext.tsx";
+import * as React from "react"
+import {UserRoundPen, ArrowLeft, Computer, type LucideIcon} from "lucide-react"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader, SidebarInset, SidebarProvider,
+  SidebarRail, SidebarTrigger,
+} from "@/components/ui/sidebar"
+import {Separator} from "@/components/ui/separator.tsx";
+import {TeamSwitcher} from "./components/TeamSwitcher";
+import {NavMain} from "@/routes/admin_dashboard/components/NavMain.tsx";
+import {NavUser} from "@/routes/admin_dashboard/components/NavUser.tsx";
+import {Button} from "@/components/ui/button";
+import {useAuth} from "@/states/AuthContext.tsx";
 import {useState} from "react";
-import UserManagement from "./components/UserManagement.tsx";
+import {useNavigate} from "react-router-dom";
+import AdminDashboardUsers from "@/routes/admin_dashboard/components/AdminDashboardUsers.tsx";
+import AdminDashboardComputeNodes from "@/routes/admin_dashboard/components/AdminDashboardComputeNodes.tsx";
+
+function Nav({navItems, selectedNavItem, onSelectedItem, ...props}: React.ComponentProps<typeof Sidebar> & {
+  navItems: {
+    key: string,
+    name: string,
+    icon: LucideIcon
+  }[],
+  selectedNavItem: string,
+  onSelectedItem: (item: string) => void,
+}) {
+  const navigate = useNavigate();
+  const {user} = useAuth();
+
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <TeamSwitcher teams={[]}/>
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain selectedItem={selectedNavItem}
+                 onSelectedItem={onSelectedItem}
+                 items={navItems}/>
+      </SidebarContent>
+      <SidebarFooter>
+        <Button variant="outline" className="w-full mb-2" onClick={() => {
+          navigate("/dashboard");
+        }}>
+          <ArrowLeft className="group-data-[collapsible=icon]:block hidden"/>
+          <span className="group-data-[collapsible=icon]:hidden">Back</span>
+        </Button>
+        <NavUser user={user!}/>
+      </SidebarFooter>
+      <SidebarRail/>
+    </Sidebar>
+  );
+}
 
 function AdminDashboardPage() {
-  const {user, logout} = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
-
-  const userDropboxMenuItems: MenuProps['items'] = [
+  const navItems = [
     {
-      key: 'profile',
-      icon: <UserOutlined/>,
-      label: user?.name
+      key: "users",
+      name: "Users",
+      icon: UserRoundPen
     },
     {
-      key: 'logout',
-      icon: <LogoutOutlined/>,
-      label: 'Logout',
-      onClick: logout
+      key: "compute-nodes",
+      name: "Compute Nodes",
+      icon: Computer
     }
   ];
 
-  if (!user || user.role !== 'admin') {
-    throw new Error('Unauthorized access');
-  }
+  const [selectedNavItem, setSelectedNavItem] = useState<string>(navItems[0].key);
 
   return (
-    <Layout
-      style={{minHeight: '100dvh'}}>
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        collapsedWidth="56px"
-        style={{
-          background: '#141414',
-          borderRight: '1px solid #303030',
-        }}
-      >
-        <Flex
-          justify="flex-start"
-          align="center"
-          vertical
-        >
-          <Flex
-            justify={collapsed ? "center" : "end"}
-            align="center"
-            style={{
-              transition: "justify-content 1s ease"
-            }}>
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined style={{color: 'white'}}/> :
-                <MenuFoldOutlined style={{color: 'white'}}/>}
-              onClick={() => setCollapsed(!collapsed)}
-              style={{margin: 6, fontSize: 24}}
+    <SidebarProvider>
+      <Nav navItems={navItems} selectedNavItem={selectedNavItem} onSelectedItem={setSelectedNavItem}/>
+      <SidebarInset>
+        <header
+          className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1"/>
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
             />
-          </Flex>
-
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={['users']}
-            style={{background: 'transparent', border: 'none'}}
-            items={[
-              {
-                key: 'users',
-                icon: <TeamOutlined/>,
-                label: 'Users'
-              }
-            ]}
-          />
-
-          <Avatar style={{marginBottom: 16}}>
-            {user.name[0]}
-          </Avatar>
-        </Flex>
-      </Sider>
-
-      <Layout>
-        <Content style={{
-          background: '#000000',
-          padding: 16,
-          display: 'flex',
-        }}>
-          <div
-            style={{
-              flex: 1,
-              background: '#141414',
-              padding: 16,
-              borderRadius: 8,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-              minHeight: '100%',
-            }}>
-            <UserManagement/>
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbPage>
+                    {navItems.find(item => item.key === selectedNavItem)?.name || "Home"}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-        </Content>
-      </Layout>
-    </Layout>
+        </header>
+
+        {/* Content */}
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          {
+            {
+              'users': <AdminDashboardUsers/>,
+              'compute-nodes': <AdminDashboardComputeNodes/>
+            }[selectedNavItem] || null
+          }
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
