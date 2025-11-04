@@ -1,46 +1,32 @@
-import {Button, Result} from 'antd';
-import {ExclamationCircleFilled} from '@ant-design/icons'
 import {useNavigate} from 'react-router-dom';
-import {useTheme} from "../../states/ThemeContext.tsx";
+import {Button} from "@/components/ui/button";
+import {AlertTriangle} from "lucide-react";
 
 function AccessDeniedPage() {
   const navigate = useNavigate();
-  const {themeColors} = useTheme();
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      padding: '1rem',
-      boxSizing: 'border-box',
-      backgroundColor: themeColors.backgroundSecondary,
-    }}>
-      <Result
-        icon={
-          <ExclamationCircleFilled style={{fontSize: 48, color: 'orange'}}/>
-        }
-        title={
-          <span style={{color: themeColors.text}}>
-            "Unauthorized"
-          </span>
-        }
-        subTitle={
-          <span style={{color: themeColors.text}}>
-          "Sorry, you are not authorized to access this page."
-        </span>
-        }
-        extra={
-          <Button style={{
-            background: themeColors.accent,
-            borderColor: themeColors.accent
-          }}
-                  onClick={() => navigate('/')}>
-            <span style={{color: themeColors.text}}>Back to Home</span>
-          </Button>
-        }
-      />
+    <div className="flex items-center justify-center min-h-screen p-4 box-border bg-background-secondary">
+      <div className="flex flex-col items-center gap-6">
+        <AlertTriangle className="h-12 w-12 text-warning"/>
+
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-semibold text-foreground">
+            Unauthorized
+          </h1>
+
+          <p className="text-muted-foreground">
+            Sorry, you are not authorized to access this page.
+          </p>
+        </div>
+
+        <Button
+          variant="default"
+          onClick={() => navigate('/')}
+        >
+          Back to Home
+        </Button>
+      </div>
     </div>
   );
 }
