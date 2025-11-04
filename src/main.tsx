@@ -1,24 +1,23 @@
 import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
-import './index.css'
+import './global.css'
 import {createBrowserRouter, RouterProvider} from "react-router-dom"
-import Home from './routes/home/Home.tsx'
+import DevHome from '@/routes/dev_home/DevHome.tsx'
 import Dashboard from "./routes/dashboard/Dashboard.tsx";
-import AdminDashboardPage from "./routes/admin_dashboard/AdminDashboardPage.tsx";
 import NotFound from "./routes/not_found/NotFound.tsx";
 import LoginPage from "./routes/login/LoginPage.tsx";
 import {AuthProvider} from "./states/AuthContext.tsx";
-import ProtectedRoute from "./components/ProtectedRoute.tsx";
-import '@ant-design/v5-patch-for-react-19';
+import ProtectedRoute from "./routes/ProtectedRoute.tsx";
 import AccessDeniedPage from "./routes/access_denied/AccessDeniedPage.tsx";
-import {ThemeProvider} from "./states/ThemeContext.tsx";
-import TestLayout from "./routes/TestLayout.tsx";
+import {ThemeProvider} from "@/states/ThemeProvider.tsx";
+import {Toaster} from "@/components/ui/sonner.tsx";
+import AdminDashboardPage from "./routes/admin_dashboard/AdminDashboardPage.tsx"
 
 const router = createBrowserRouter([
-  {path: '/', element: <Home/>},
+  {path: '/', element: <DevHome/>},
   {path: '/login', element: <LoginPage/>},
   {path: '/access_denied', element: <AccessDeniedPage/>},
-  {path: '/test', element: <TestLayout/>},
+  {path: '/dev', element: <DevHome/>},
   {
     path: '/dashboard',
     element: <ProtectedRoute/>,
@@ -27,7 +26,7 @@ const router = createBrowserRouter([
       {
         path: 'admin', element: <ProtectedRoute requireAdmin/>,
         children: [
-          {index: true, element: <AdminDashboardPage/>}
+          {index: true, element: <AdminDashboardPage />}
         ]
       }
     ]
@@ -40,7 +39,8 @@ createRoot(document.getElementById('root')!).render(
     <div className="w-screen h-screen">
       <ThemeProvider>
         <AuthProvider>
-          <RouterProvider router={router}/>
+          <Toaster position="top-center" />
+          <RouterProvider router={router} />
         </AuthProvider>
       </ThemeProvider>
     </div>
