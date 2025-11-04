@@ -1,42 +1,26 @@
-import {Result, Spin} from 'antd';
-import {LoadingOutlined} from '@ant-design/icons';
-import {useTheme} from "../states/ThemeContext.tsx";
+import {Loader2} from "lucide-react";
 
 type LoadingProps = {
   title?: string;
   description?: string;
   extra?: React.ReactNode;
-}
+};
 
 function Loading({title, description, extra}: LoadingProps) {
-  const {themeColors} = useTheme();
-
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      padding: '1rem',
-      boxSizing: 'border-box',
-      backgroundColor: themeColors.backgroundSecondary,
-    }}>
-      <Result
-        icon={
-          <Spin indicator={<LoadingOutlined style={{fontSize: 48, color: themeColors.accent}} spin/>}/>
-        }
-        title={
-          <span style={{color: themeColors.text}}>
-            {title ? title : 'Loading...'}
-          </span>
-        }
-        subTitle={
-          <span style={{color: themeColors.text}}>
-            {description ? description : 'Please wait while we load the page.'}
-          </span>
-        }
-        extra={extra}
-      />
+    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary"/>
+        </div>
+        <h2 className="text-2xl font-semibold tracking-tight">
+          {title ?? "Loading..."}
+        </h2>
+        <p className="text-muted-foreground">
+          {description ?? "Please wait while we load the page."}
+        </p>
+        {extra && <div className="mt-4">{extra}</div>}
+      </div>
     </div>
   );
 }
