@@ -10,11 +10,10 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader, SidebarInset, SidebarProvider,
+  SidebarInset, SidebarProvider,
   SidebarRail, SidebarTrigger,
 } from "@/components/ui/sidebar"
 import {Separator} from "@/components/ui/separator.tsx";
-import {TeamSwitcher} from "./components/TeamSwitcher";
 import {NavMain} from "@/routes/admin_dashboard/components/NavMain.tsx";
 import {NavUser} from "@/routes/admin_dashboard/components/NavUser.tsx";
 import {Button} from "@/components/ui/button";
@@ -38,9 +37,6 @@ function Nav({navItems, selectedNavItem, onSelectedItem, ...props}: React.Compon
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={[]}/>
-      </SidebarHeader>
       <SidebarContent>
         <NavMain selectedItem={selectedNavItem}
                  onSelectedItem={onSelectedItem}
