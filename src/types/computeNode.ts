@@ -1,15 +1,18 @@
 
-export interface ComputeNode {
-  id: number;
-  hostname: string;
+export type ComputeNode = {
+  id: string
+  hostname: string
+  status: 'online' | 'offline'
+}
+
+export type ComputeNodeDetail = ComputeNode & {
   ip: string;
   port: number;
   added_by: number | null;
-  status: 'online' | 'offline';
   created_at: Date;
 }
 
-export interface ComputeNodeModels {
+export type ComputeNodeModel = {
   name: string;
   size: number;
 }

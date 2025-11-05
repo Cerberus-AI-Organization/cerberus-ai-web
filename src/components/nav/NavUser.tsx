@@ -1,5 +1,5 @@
 import {BadgeCheck, ChevronsUpDown, LogOut, Moon, Settings, Sun} from "lucide-react"
-import {Avatar, AvatarFallback} from "@/components/ui/avatar"
+import {Avatar, AvatarFallback} from "@/components/ui/avatar.tsx"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,13 +8,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu.tsx"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar.tsx"
 import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {useTheme} from "@/states/ThemeProvider.tsx";

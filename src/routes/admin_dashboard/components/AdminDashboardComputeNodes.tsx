@@ -32,31 +32,17 @@ import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext";
 import {Card} from "@/components/ui/card.tsx";
 import {LucideRefreshCw, CassetteTapeIcon, Pencil, Trash2} from "lucide-react";
-
-interface Model {
-  name: string;
-  size: number;
-}
-
-interface ComputeNode {
-  id: number;
-  hostname: string;
-  ip: string;
-  port: number;
-  added_by: number;
-  status: string;
-  created_at: string;
-}
+import type {ComputeNodeDetail, ComputeNodeModel} from "@/types/computeNode.ts";
 
 function AdminDashboardComputeNodes() {
   const {isAuthenticated, token} = useAuth();
-  const [nodes, setNodes] = useState<ComputeNode[]>([]);
+  const [nodes, setNodes] = useState<ComputeNodeDetail[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isModelsOpen, setIsModelsOpen] = useState(false);
   const [isPullOpen, setPullOpen] = useState(false);
-  const [models, setModels] = useState<Model[]>([]);
+  const [models, setModels] = useState<ComputeNodeModel[]>([]);
   const [modelName, setModelName] = useState("");
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState("");
@@ -66,8 +52,8 @@ function AdminDashboardComputeNodes() {
     total: 0,
     startTime: 0
   });
-  const [selectedNode, setSelectedNode] = useState<ComputeNode | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ column: keyof ComputeNode; direction: 'asc' | 'desc' } | null>(null);
+  const [selectedNode, setSelectedNode] = useState<ComputeNodeDetail | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ column: keyof ComputeNodeDetail; direction: 'asc' | 'desc' } | null>(null);
   const [filterText, setFilterText] = useState("");
   const [formData, setFormData] = useState({
     hostname: "",
@@ -289,14 +275,14 @@ function AdminDashboardComputeNodes() {
               .filter(node =>
                 filterText === "" ||
                 Object.values(node).some(value =>
-                  value.toString().toLowerCase().includes(filterText.toLowerCase())
+                  value!.toString().toLowerCase().includes(filterText.toLowerCase())
                 )
               )
               .sort((a, b) => {
                 if (!sortConfig) return 0;
                 const {column, direction} = sortConfig;
-                if (a[column] < b[column]) return direction === 'asc' ? -1 : 1;
-                if (a[column] > b[column]) return direction === 'asc' ? 1 : -1;
+                if (a[column]! < b[column]!) return direction === 'asc' ? -1 : 1;
+                if (a[column]! > b[column]!) return direction === 'asc' ? 1 : -1;
                 return 0;
               })
               .map((node) => (

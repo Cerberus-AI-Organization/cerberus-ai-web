@@ -9,13 +9,12 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
-  SidebarInset, SidebarProvider,
+  SidebarFooter, SidebarGroup, SidebarGroupLabel,
+  SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider,
   SidebarRail, SidebarTrigger,
 } from "@/components/ui/sidebar"
 import {Separator} from "@/components/ui/separator.tsx";
-import {NavMain} from "@/routes/admin_dashboard/components/NavMain.tsx";
-import {NavUser} from "@/routes/admin_dashboard/components/NavUser.tsx";
+import {NavUser} from "@/components/nav/NavUser.tsx";
 import {Button} from "@/components/ui/button";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {useState} from "react";
@@ -38,9 +37,29 @@ function Nav({navItems, selectedNavItem, onSelectedItem, ...props}: React.Compon
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarContent>
-        <NavMain selectedItem={selectedNavItem}
-                 onSelectedItem={onSelectedItem}
-                 items={navItems}/>
+        <SidebarGroup>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Menu</SidebarGroupLabel>
+          <SidebarMenu>
+            {navItems.map((item) => (
+              <SidebarMenuItem key={item.name}>
+                <SidebarMenuButton asChild isActive={selectedNavItem == item.key}
+                                   className={"transition-all duration-75 ease-in"}>
+                  <a
+                    href={"#"}
+                    className={selectedNavItem == item.key ? "text-primary font-medium" : ""}
+                    onClick={event => {
+                      event.preventDefault();
+                      onSelectedItem(item.key);
+                    }}
+                  >
+                    <item.icon className={selectedNavItem == item.key ? "text-primary" : ""}/>
+                    <span className="group-data-[collapsible=icon]:hidden">{item.name}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <Button variant="outline" className="w-full mb-2" onClick={() => {
