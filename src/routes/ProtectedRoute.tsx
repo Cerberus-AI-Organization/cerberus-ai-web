@@ -10,8 +10,6 @@ function ProtectedRoute({ requireAdmin = false }: Props) {
   const { user, isAuthenticated, isFetching } = useAuth();
   const location = useLocation();
 
-  console.log(user, isAuthenticated, isFetching);
-  
   if (isFetching && !isAuthenticated) {
     return (
       <Loading
