@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -8,7 +9,10 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
+    --color-table-header: var(--table-header);
+    --color-table-row-even: var(--table-row-even);
+    --color-table-row-odd: var(--table-row-odd);
+    --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -44,6 +48,9 @@
 :root {
     --radius: 0.625rem;
     --background: oklch(1 0 0);
+    --table-header: oklch(0.985 0 0);
+    --table-row-even: oklch(0.973 0 89.876);
+    --table-row-odd: oklch(0.961 0 89.876);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
@@ -79,6 +86,9 @@
 .dark {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
+    --table-header: oklch(0.205 0 0);
+    --table-row-even: oklch(0.222 0 89.876);
+    --table-row-odd: oklch(0.231 0 89.876);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);

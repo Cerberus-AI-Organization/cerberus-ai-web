@@ -36,7 +36,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <div className="w-screen h-screen">
+    <div className="w-screen h-screen max-w-screen max-h-screen">
       <ThemeProvider>
         <AuthProvider>
           <Toaster position="top-center" />

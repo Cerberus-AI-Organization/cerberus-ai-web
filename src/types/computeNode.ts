@@ -1,6 +1,6 @@
 
 export type ComputeNode = {
-  id: string
+  id: number
   hostname: string
   status: 'online' | 'offline'
 }

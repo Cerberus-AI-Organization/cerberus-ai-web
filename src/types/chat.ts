@@ -1,6 +1,6 @@
 
 export type Chat = {
-  id: string
+  id: number
   title: string
   created_by: string
   created_at: string
@@ -8,10 +8,10 @@ export type Chat = {
 }
 
 export type Message = {
-  id: string
-  chat_id: string
+  id: number
+  chat_id: number
   sender_type: 'user' | 'ai'
-  sender_id: string | null
+  sender_id: number | null
   content: string
   created_at: string
 }

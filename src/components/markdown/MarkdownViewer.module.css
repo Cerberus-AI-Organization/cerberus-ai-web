@@ -1,0 +1,97 @@
+.proseWrapper {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Inline code */
+.code {
+    background: var(--color-sidebar) !important;
+    color: var(--color-primary) !important;
+    padding: 0.2em 0.4em;
+    border-radius: 6px;
+    font-family: monospace;
+}
+
+/* Block code */
+.pre {
+    width: 100%;
+    display: block;
+    background: var(--color-sidebar) !important;
+    padding: 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.preCode {
+    background: transparent !important;
+    padding: 0 !important;
+    color: var(--color-primary) !important;
+}
+
+/* Tables */
+.table {
+    width: 100%;
+    margin-bottom: 1em;
+    border-collapse: collapse;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    display: block;
+    overflow-x: auto;
+    background-color: var(--color-table-header);
+}
+
+.table tbody tr:nth-child(even) td {
+    background-color: var(--color-table-row-even);
+}
+
+.table tbody tr:nth-child(odd) td {
+    background-color: var(--color-table-row-odd);
+}
+
+.th {
+    padding: 0.5em;
+    background-color: var(--color-table-header);
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tr {
+    color: var(--color-primary);
+    background-color: transparent;
+}
+
+.td {
+    padding: 0.5em;
+    background-color: transparent;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Lists */
+.li {
+    color: var(--color-primary);
+}
+
+.li::marker {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+}
+
+.ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+}
+
+/* Headings */
+.proseWrapper h1,
+.proseWrapper h2,
+.proseWrapper h3,
+.proseWrapper h4,
+.proseWrapper h5,
+.proseWrapper h6 {
+    color: var(--color-primary);
+}
