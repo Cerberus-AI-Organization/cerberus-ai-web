@@ -61,10 +61,18 @@ function Dashboard() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadNodes()
-      loadChats()
-    }
+    if (!isAuthenticated)
+      return
+
+    loadNodes()
+    loadChats()
+
+    const interval = setInterval(() => {
+      loadNodes();
+      loadModels(selectedNode || nodes[0].id);
+    }, 60_000);
+
+    return () => clearInterval(interval);
   }, [isAuthenticated])
 
   useEffect(() => {
@@ -103,7 +111,7 @@ function Dashboard() {
         throw new Error('Failed to load nodes');
       }
 
-      const data:ComputeNode[] = await response.json();
+      const data: ComputeNode[] = await response.json();
       setNodes(data)
       if (data.length > 0 && !selectedNode) {
         const savedNodeId = localStorage.getItem('preferredComputeNode');
@@ -117,6 +125,11 @@ function Dashboard() {
   }
 
   const loadModels = async (nodeId: number) => {
+    if (nodes.find(n => n.id === nodeId)?.status === 'offline') {
+      setModels([]);
+      return
+    }
+
     try {
       const response = await fetch(`/api/compute-nodes/${nodeId}/models`, {
         headers: {
@@ -129,7 +142,7 @@ function Dashboard() {
         throw new Error('Failed to load models');
       }
 
-      const data:ComputeNodeModel[] = await response.json();
+      const data: ComputeNodeModel[] = await response.json();
       setModels(data)
       if (data.length > 0 && !selectedModel) {
         const savedModel = localStorage.getItem('preferredModel');
