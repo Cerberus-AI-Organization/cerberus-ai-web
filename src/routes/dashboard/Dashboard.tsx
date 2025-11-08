@@ -116,8 +116,10 @@ function Dashboard() {
       setNodes(data)
       if (data.length > 0 && !selectedNode) {
         const savedNodeId = localStorage.getItem('preferredComputeNode');
-        const preferredNode = savedNodeId ? data.find(n => n.id === Number(savedNodeId)) : null;
-        setSelectedNode(preferredNode?.id || data[0].id);
+        const preferredNode = savedNodeId ? data.find(n =>
+          n.id === Number(savedNodeId) && n.status == "online") : null;
+
+        setSelectedNode(preferredNode?.id || data.find(n => n.status === 'online')?.id || data[0].id);
       }
       // toast.success("Nodes loaded successfully");
     } catch {
