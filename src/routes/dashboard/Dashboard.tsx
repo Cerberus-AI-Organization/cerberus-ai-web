@@ -322,7 +322,7 @@ function Dashboard() {
               updated[aiMessageIndex] = data.generated_message;
               return updated;
             });
-          } else if ('chat' in data){
+          } else if ('chat' in data) {
             if (chatId === -1) {
               chatId = data.chat.id;
 
@@ -334,7 +334,7 @@ function Dashboard() {
         }
       }
 
-      if(selectedChat == -1)
+      if (selectedChat == -1)
         setSelectedChat(chatId);
 
       // toast.success("Message sent successfully");
@@ -419,6 +419,7 @@ function Dashboard() {
                           {model.name}
                         </SelectItem>
                       ))}
+                      {models.length === 0 && <SelectItem value={""}>No Models Found</SelectItem>}
                     </SelectContent>
                   </Select>
                 </div>
