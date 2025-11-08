@@ -354,7 +354,7 @@ function Dashboard() {
       />
       <SidebarInset className="flex flex-col h-screen w-full overflow-x-hidden">
         <header
-          className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 overflow-x-hidden">
           <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1"/>
             <Separator orientation="vertical" className="mr-2 h-4"/>
@@ -380,7 +380,7 @@ function Dashboard() {
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 flex flex-col w-full">
+        <div className="flex-1 min-h-0 flex flex-col w-full overflow-x-hidden">
           <ScrollArea className="flex-1 min-h-0 w-full">
             <div className="p-4 w-full space-y-4">
               {selectedChat ? (
@@ -399,7 +399,7 @@ function Dashboard() {
           </ScrollArea>
 
           {selectedChat && (
-            <div className="border-t p-4 shrink-0">
+            <div className="border-t p-4 shrink-0 overflow-x-hidden">
               <div className="max-w-4xl w-full space-y-2">
                 <div className="flex gap-2">
                   <Select value={selectedModel || undefined} onValueChange={setSelectedModel}>
