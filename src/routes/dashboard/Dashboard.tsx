@@ -421,7 +421,7 @@ function Dashboard() {
                           {model.name}
                         </SelectItem>
                       ))}
-                      {models.length === 0 && <SelectItem value={""}>No Models Found</SelectItem>}
+                      {models.length === 0 && <SelectItem value={"no-models"}>No Models Found</SelectItem>}
                     </SelectContent>
                   </Select>
                 </div>
