@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 export default defineConfig({
+  envPrefix: 'CERBERUS_',
   server: {
     port: 80,
     proxy: {

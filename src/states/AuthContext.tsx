@@ -2,6 +2,7 @@ import type {User} from "../types/user.ts";
 import {createContext, type JSX, useEffect, useState} from "react";
 import {useContext} from "react";
 import * as React from "react";
+import {API_URL} from "@/lib/api.ts";
 
 interface AuthContextType {
   user: User | null;
@@ -27,7 +28,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -44,7 +45,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })

@@ -45,6 +45,7 @@ import {
 import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {toast} from "sonner";
+import {API_URL} from "@/lib/api.ts";
 
 const userFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -99,7 +100,7 @@ function AdminDashboardUsers() {
 
   async function fetchUsers() {
     try {
-      const response = await fetch('/api/users', {
+      const response = await fetch(`${API_URL}/users`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -129,7 +130,7 @@ function AdminDashboardUsers() {
           payload.password = data.password;
         }
 
-        const response = await fetch(`/api/users/${editingUser.id}`, {
+        const response = await fetch(`${API_URL}/users/${editingUser.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -141,7 +142,7 @@ function AdminDashboardUsers() {
         if (!response.ok) throw new Error('Failed to update user');
         toast.success('User updated successfully');
       } else {
-        const response = await fetch('/api/users', {
+        const response = await fetch(`${API_URL}/users`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ function AdminDashboardUsers() {
     if (!userToDelete) return;
 
     try {
-      const response = await fetch(`/api/users/${userToDelete.id}`, {
+      const response = await fetch(`${API_URL}/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`

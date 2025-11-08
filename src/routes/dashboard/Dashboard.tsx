@@ -38,6 +38,7 @@ import MessageBubble from "@/routes/dashboard/components/MessageBubble.tsx";
 import ChatSidebar from "@/routes/dashboard/components/ChatSidebar.tsx";
 import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext.tsx";
+import {API_URL} from "@/lib/api.ts";
 
 function Dashboard() {
   const {isAuthenticated, token} = useAuth();
@@ -100,7 +101,7 @@ function Dashboard() {
 
   const loadNodes = async () => {
     try {
-      const response = await fetch('/api/compute-nodes', {
+      const response = await fetch(`${API_URL}/compute-nodes`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -131,7 +132,7 @@ function Dashboard() {
     }
 
     try {
-      const response = await fetch(`/api/compute-nodes/${nodeId}/models`, {
+      const response = await fetch(`${API_URL}/compute-nodes/${nodeId}/models`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -157,7 +158,7 @@ function Dashboard() {
 
   const loadChats = async () => {
     try {
-      const response = await fetch('/api/chats', {
+      const response = await fetch(`${API_URL}/chats`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -181,7 +182,7 @@ function Dashboard() {
 
   const loadMessages = async (chatId: number) => {
     try {
-      const response = await fetch(`/api/chats/${chatId}/messages`, {
+      const response = await fetch(`${API_URL}/chats/${chatId}/messages`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -204,7 +205,7 @@ function Dashboard() {
     if (!title) return
 
     try {
-      const response = await fetch('/api/chats', {
+      const response = await fetch(`${API_URL}/chats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -230,7 +231,7 @@ function Dashboard() {
     if (!selectedChat) return
 
     try {
-      const response = await fetch(`/api/chats/${selectedChat}`,
+      const response = await fetch(`${API_URL}/chats/${selectedChat}`,
         {
           method: "DELETE",
           headers: {
@@ -261,7 +262,7 @@ function Dashboard() {
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/chats/${selectedChat}/message`, {
+      const response = await fetch(`${API_URL}/chats/${selectedChat}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
