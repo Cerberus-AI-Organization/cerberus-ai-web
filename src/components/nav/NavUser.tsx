@@ -1,4 +1,4 @@
-import {BadgeCheck, ChevronsUpDown, LogOut, Moon, Settings, Sun} from "lucide-react"
+import {BadgeCheck, ChevronsUpDown, LogOut, Moon, Settings, LucideAlignHorizontalDistributeCenter, Sun} from "lucide-react"
 import {Avatar, AvatarFallback} from "@/components/ui/avatar.tsx"
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {useTheme} from "@/states/ThemeProvider.tsx";
 import type {User} from "@/types/user.ts";
+import {useLocation, useNavigate} from "react-router-dom";
 
 type UserAvatarProps = {
   user: User;
@@ -39,13 +40,25 @@ function UserAvatar({user, className}: UserAvatarProps) {
 export function NavUser({user}: {
   user: User
 }) {
+  const navigate = useNavigate()
+  const location = useLocation();
   const {isMobile} = useSidebar();
   const {logout} = useAuth();
   const {theme, setTheme} = useTheme();
 
+  const isAdmin = user.role === 'admin';
+  const onAdminDashboard = location.pathname.startsWith('/dashboard/admin');
+
   const handlers = {
     account: () => toast.info("Account settings coming soon"),
     settings: () => toast.info("Settings coming soon"),
+    admin_dashboard: () => {
+      if (isAdmin) {
+        navigate('/dashboard/admin')
+      } else {
+        toast.error("You do not have permission to access this page")
+      }
+    },
     logout: () => {
       logout();
       toast.success("Logged out successfully");
@@ -91,18 +104,24 @@ export function NavUser({user}: {
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlers.settings}>
-              <Settings/>
+                <Settings/>
                 Settings
               </DropdownMenuItem>
+              {isAdmin && !onAdminDashboard &&
+                <DropdownMenuItem onClick={handlers.admin_dashboard}>
+                  <LucideAlignHorizontalDistributeCenter/>
+                  Admin Dashboard
+                </DropdownMenuItem>
+              }
             </DropdownMenuGroup>
             <DropdownMenuSeparator/>
             <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-              {theme === "light" ? <Sun /> : <Moon />}
+              {theme === "light" ? <Sun/> : <Moon/>}
               Toggle theme
             </DropdownMenuItem>
             <DropdownMenuSeparator/>
             <DropdownMenuItem onClick={handlers.logout}>
-            <LogOut/>
+              <LogOut/>
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
