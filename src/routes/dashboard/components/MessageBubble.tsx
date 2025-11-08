@@ -1,6 +1,7 @@
 import type {Message} from "@/types/chat.ts";
 import {Bot, User} from "lucide-react";
 import MarkdownViewer from "@/components/markdown/MarkdownViewer.tsx";
+import {Skeleton} from "@/components/ui/skeleton.tsx";
 
 function MessageBubble({message}: { message: Message }) {
   const isUser = message.sender_type === 'user'
@@ -17,7 +18,14 @@ function MessageBubble({message}: { message: Message }) {
         <div className={`rounded-lg px-4 py-2 max-w-[65vw] sm:max-w-[50vw] break-words ${
           isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
         }`}>
-          <MarkdownViewer content={message.content}/>
+          {message.content.trim() === ''
+            ? <div className="flex gap-1">
+                <Skeleton className="h-4 w-15 rounded-sm bg-ring"/>
+                <Skeleton className="h-4 w-25 rounded-sm bg-ring"/>
+              </div>
+            : <MarkdownViewer content={message.content}/>
+          }
+
         </div>
         <span className="text-xs text-muted-foreground">
           {new Date(message.created_at).toLocaleTimeString()}
