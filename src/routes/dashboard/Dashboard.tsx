@@ -54,7 +54,7 @@ function Dashboard() {
   const [selectedModel, setSelectedModel] = useState<string | null>(() => {
     return localStorage.getItem('preferredModel');
   })
-  const [selectedChat, setSelectedChat] = useState<number | null>(null)
+  const [selectedChat, setSelectedChat] = useState<number>(-1);
   const [messageInput, setMessageInput] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -171,9 +171,6 @@ function Dashboard() {
 
       const data = await response.json();
       setChats(data)
-      if (data.length > 0 && !selectedChat) {
-        setSelectedChat(data[0].id)
-      }
       // toast.success("Chats loaded successfully");
     } catch {
       toast.error("Failed to load chats");
@@ -181,6 +178,9 @@ function Dashboard() {
   }
 
   const loadMessages = async (chatId: number) => {
+    if (chatId == -1)
+      return
+
     try {
       const response = await fetch(`${API_URL}/chats/${chatId}/messages`, {
         headers: {
@@ -201,34 +201,13 @@ function Dashboard() {
     }
   }
 
-  const handleCreateChat = async (title: string) => {
-    if (!title) return
-
-    try {
-      const response = await fetch(`${API_URL}/chats`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({title})
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create chat');
-      }
-
-      const data = await response.json();
-      setChats([data, ...chats])
-      setSelectedChat(data.id)
-      toast.success("Chat created successfully");
-    } catch {
-      toast.error("Failed to create chat");
-    }
+  const handleCreateChat = async () => {
+    setSelectedChat(-1);
+    setMessages([]);
   }
 
   const handleDeleteChat = async () => {
-    if (!selectedChat) return
+    if (selectedChat == -1) return
 
     try {
       const response = await fetch(`${API_URL}/chats/${selectedChat}`,
@@ -250,9 +229,9 @@ function Dashboard() {
     } catch {
       toast.error("Failed to delete chat");
     } finally {
-      setDeleteDialogOpen(false)
-      setMessages([])
-      setSelectedChat(chats.length > 1 ? chats[0].id : null)
+      setDeleteDialogOpen(false);
+      setMessages([]);
+      setSelectedChat(chats.length > 1 ? chats[0].id : -1);
     }
   }
 
@@ -260,9 +239,28 @@ function Dashboard() {
     if (!messageInput.trim() || !selectedChat || !selectedNode || !selectedModel) return
 
     setLoading(true)
+    let chatId = selectedChat;
 
     try {
-      const response = await fetch(`${API_URL}/chats/${selectedChat}/message`, {
+      setMessages(prev => [
+        ...prev, {
+          id: -1,
+          chat_id: chatId,
+          content: messageInput,
+          created_at: new Date().toLocaleString(),
+          sender_id: null,
+          sender_type: 'user'
+        }, {
+          id: -2,
+          chat_id: chatId,
+          content: '',
+          created_at: new Date().toLocaleString(),
+          sender_id: null,
+          sender_type: 'ai'
+        }
+      ]);
+
+      const response = await fetch(`${API_URL}/chats/${chatId}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -299,36 +297,45 @@ function Dashboard() {
           console.log(data)
 
           if ('message' in data) {
-            setMessages(prev => [...prev, data.message]);
-            setMessages(prev => [...prev, {
-              id: -1,
-              chat_id: selectedChat,
-              content: '',
-              created_at: new Date().toLocaleString(),
-              sender_id: null,
-              sender_type: 'ai'
-            }]);
+            setMessages(prev => {
+              const updated = [...prev]
+              const userMessageIndex = updated.map(m => m.sender_type).lastIndexOf('user');
+              if (userMessageIndex === -1) return updated;
+              updated[userMessageIndex] = data.message;
+              return updated;
+            });
           } else if ('generated_chunk' in data) {
             currentContent += data.generated_chunk.content;
             setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                content: currentContent
-              };
+              const updated = [...prev]
+              const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
+              if (aiMessageIndex === -1) return updated;
+              updated[aiMessageIndex] = {...updated[aiMessageIndex], content: currentContent};
               return updated;
             });
           } else if ('generated_message' in data) {
+            console.log(chatId, messages)
             setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = data.generated_message;
+              const updated = [...prev]
+              const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
+              if (aiMessageIndex === -1) return updated;
+              updated[aiMessageIndex] = data.generated_message;
               return updated;
             });
+          } else if ('chat' in data){
+            if (chatId === -1) {
+              chatId = data.chat.id;
+
+              setChats(prev => [data.chat, ...prev]);
+            }
           } else if ('error' in data) {
             throw new Error(data.error);
           }
         }
       }
+
+      if(selectedChat == -1)
+        setSelectedChat(chatId);
 
       // toast.success("Message sent successfully");
     } catch {
@@ -347,7 +354,7 @@ function Dashboard() {
         chats={chats}
         selectedChat={selectedChat}
         onSelectChat={setSelectedChat}
-        onCreateChat={() => handleCreateChat('New Chat')}
+        onCreateChat={handleCreateChat}
         selectedNode={selectedNode}
         nodes={nodes}
         onSelectNode={setSelectedNode}
@@ -362,12 +369,12 @@ function Dashboard() {
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbPage>
-                    {selectedChatData?.title || 'Select a chat'}
+                    {selectedChatData?.title || 'New Chat'}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            {selectedChat && (
+            {selectedChat != -1 && (
               <Button
                 variant="ghost"
                 size="icon"
