@@ -8,12 +8,12 @@ import {
   SidebarMenu, SidebarMenuButton,
   SidebarMenuItem, SidebarRail
 } from "@/components/ui/sidebar.tsx";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {MessageSquare, Plus, Server} from "lucide-react";
+import {MessageSquare, Plus} from "lucide-react";
 import {Separator} from "@/components/ui/separator.tsx";
 import {NavUser} from "@/components/nav/NavUser.tsx";
 import {useAuth} from "@/states/AuthContext.tsx";
+import {ComputeNodeSwitcher} from "@/routes/dashboard/components/ComputeNodeSwitcher.tsx";
 
 function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedNode, nodes, onSelectNode}: {
   chats: Chat[]
@@ -30,32 +30,12 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedN
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
-            Compute Node
-          </SidebarGroupLabel>
-          <div className="px-2 py-1 group-data-[collapsible=icon]:px-1">
-            <Select value={selectedNode?.toString() || undefined} onValueChange={value => onSelectNode(Number(value)!)}>
-              <SelectTrigger className="w-full group-data-[collapsible=icon]:hidden">
-                <SelectValue placeholder="Select node"/>
-              </SelectTrigger>
-              <SelectContent>
-                {nodes.map((node) => (
-                  <SelectItem key={node.id} value={node.id.toString()}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${node.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}/>
-                      {node.hostname}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="group-data-[collapsible=icon]:block hidden">
-              <Button variant="ghost" size="icon" className="w-full">
-                <Server className="h-4 w-4"/>
-              </Button>
-            </div>
-          </div>
+          <ComputeNodeSwitcher
+            nodes={nodes}
+            selectedNode={selectedNode}
+            onSelectedNode={node => {
+              onSelectNode(node.id);
+            }} />
         </SidebarGroup>
 
         <Separator/>
