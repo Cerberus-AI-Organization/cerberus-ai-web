@@ -302,6 +302,7 @@ function Dashboard() {
         const lines = value.split('\n').filter(line => line.trim());
 
         for (const line of lines) {
+          if (!line.trim()) continue;
           const data = JSON.parse(line);
           // console.log(data)
 
