@@ -68,20 +68,21 @@ function Dashboard() {
     loadNodes()
     loadChats()
 
-    const interval = setInterval(() => {
-      loadNodes();
-      loadModels(selectedNode || nodes[0].id);
-    }, 60_000);
+    const interval = setInterval(async () => {
+      await loadNodes();
+    }, 15_000);
 
     return () => clearInterval(interval);
   }, [isAuthenticated])
 
   useEffect(() => {
-    if (selectedNode && isAuthenticated) {
-      loadModels(selectedNode)
+    if (!isAuthenticated) return
+
+    loadModels(selectedNode || nodes[0]?.id);
+
+    if (selectedNode)
       localStorage.setItem('preferredComputeNode', String(selectedNode));
-    }
-  }, [selectedNode, isAuthenticated])
+  }, [isAuthenticated, nodes, selectedNode]);
 
   useEffect(() => {
     if (selectedModel) {
@@ -128,8 +129,14 @@ function Dashboard() {
   }
 
   const loadModels = async (nodeId: number) => {
-    if (nodes.find(n => n.id === nodeId)?.status === 'offline') {
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node) {
       setModels([]);
+      console.log("Node not found")
+      return
+    } else if (node.status !== 'online') {
+      setModels([]);
+      console.log("Skipping loading models because node is not online")
       return
     }
 
@@ -343,7 +350,8 @@ function Dashboard() {
         }
       }
 
-    } catch {
+    } catch (error) {
+      console.error('Error sending message:', error);
       toast.error("Failed to send message");
       loadMessages(chatId);
     } finally {
@@ -425,7 +433,7 @@ function Dashboard() {
                           {model.name}
                         </SelectItem>
                       ))}
-                      {models.length === 0 && <SelectItem value={"no-models"}>No Models Found</SelectItem>}
+                      {models.length === 0 && <SelectItem value={"no-models"} disabled>No Models Found</SelectItem>}
                     </SelectContent>
                   </Select>
                 </div>
