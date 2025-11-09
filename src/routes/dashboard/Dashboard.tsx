@@ -57,7 +57,7 @@ function Dashboard() {
   const [selectedChat, setSelectedChat] = useState<number>(-1);
   const [messageInput, setMessageInput] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [gettingAiMessage, setGettingAiMessage] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -90,7 +90,7 @@ function Dashboard() {
   }, [selectedModel])
 
   useEffect(() => {
-    if (selectedChat && isAuthenticated) {
+    if (selectedChat && isAuthenticated && !gettingAiMessage) {
       loadMessages(selectedChat)
     }
   }, [selectedChat, isAuthenticated])
@@ -240,7 +240,7 @@ function Dashboard() {
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedChat || !selectedNode || !selectedModel) return
 
-    setLoading(true)
+    setGettingAiMessage(true)
     let chatId = selectedChat;
 
     try {
@@ -296,7 +296,7 @@ function Dashboard() {
 
         for (const line of lines) {
           const data = JSON.parse(line);
-          console.log(data)
+          // console.log(data)
 
           if ('message' in data) {
             setMessages(prev => {
@@ -316,7 +316,6 @@ function Dashboard() {
               return updated;
             });
           } else if ('generated_message' in data) {
-            console.log(chatId, messages)
             setMessages(prev => {
               const updated = [...prev]
               const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
@@ -329,6 +328,14 @@ function Dashboard() {
               chatId = data.chat.id;
 
               setChats(prev => [data.chat, ...prev]);
+              setMessages(prev => {
+                const updated = [...prev]
+                for (const m of updated) {
+                  m.chat_id = chatId;
+                }
+                return updated;
+              })
+              setSelectedChat(chatId);
             }
           } else if ('error' in data) {
             throw new Error(data.error);
@@ -336,19 +343,16 @@ function Dashboard() {
         }
       }
 
-      if (selectedChat == -1)
-        setSelectedChat(chatId);
-
-      // toast.success("Message sent successfully");
     } catch {
       toast.error("Failed to send message");
+      loadMessages(chatId);
     } finally {
-      setLoading(false)
+      setGettingAiMessage(false)
       setMessageInput('')
     }
   }
 
-  const selectedChatData = chats.find(c => c.id === selectedChat)
+  const selectedChatData = chats.find(c => c.id === selectedChat);
 
   return (
     <SidebarProvider>
@@ -436,11 +440,11 @@ function Dashboard() {
                         handleSendMessage();
                       }
                     }}
-                    disabled={loading}
+                    disabled={gettingAiMessage}
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={loading || !messageInput.trim()}
+                    disabled={gettingAiMessage || !messageInput.trim()}
                   >
                     <Send className="h-4 w-4"/>
                   </Button>
