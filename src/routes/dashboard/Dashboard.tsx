@@ -233,7 +233,7 @@ function Dashboard() {
     } finally {
       setDeleteDialogOpen(false);
       setMessages([]);
-      setSelectedChat(chats.length > 1 ? chats[0].id : -1);
+      setSelectedChat(-1);
     }
   }
 
