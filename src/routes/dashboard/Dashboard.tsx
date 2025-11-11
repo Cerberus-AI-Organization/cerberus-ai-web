@@ -295,16 +295,27 @@ function Dashboard() {
       }
 
       let currentContent = '';
+      let buffer = '';
+
       while (true) {
         const {value, done} = await reader.read();
         if (done) break;
+        if (!value) continue;
+        buffer += value;
 
-        const lines = value.split('\n').filter(line => line.trim());
-
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '';
         for (const line of lines) {
-          if (!line.trim()) continue;
-          const data = JSON.parse(line);
-          // console.log(data)
+          if (!line) continue;
+
+          let data;
+          try {
+            data = JSON.parse(line);
+          } catch {
+            console.error('Failed to parse JSON:', line, 'Saving into buffer:', buffer);
+            buffer = line + "\n" + buffer;
+            continue;
+          }
 
           if ('message' in data) {
             setMessages(prev => {
