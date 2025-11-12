@@ -1,5 +1,7 @@
 import {useMemo} from "react";
 import MarkdownPreview from "@uiw/react-markdown-preview";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import katex from 'katex';
 import 'katex/dist/katex.css';
 import {getCodeString} from 'rehype-rewrite';
@@ -26,7 +28,8 @@ export default function MarkdownViewer({content, className = ""}: Props) {
         wrapperElement={{
           "data-color-mode": theme === "dark" ? "dark" : "light",
         }}
-        remarkPlugins={[]}
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
         rehypeRewrite={(node, _index, parent) => {
           if ((node as Element).type === "element") {
             const el = node as Element;
