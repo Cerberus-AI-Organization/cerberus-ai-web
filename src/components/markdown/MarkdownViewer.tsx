@@ -18,9 +18,15 @@ export default function MarkdownViewer({content, className = ""}: Props) {
   const {theme} = useTheme();
 
   const preview = useMemo(() => {
+    const preprocess = (text: string) => {
+      return text
+        .replace(/\\\[\s*/g, '\n$$\n')
+        .replace(/\s*\\\]/g, '\n$$\n');
+    };
+
     return (
       <MarkdownPreview
-        source={content}
+        source={preprocess(content)}
         style={{
           background: "transparent",
           color: "inherit",
