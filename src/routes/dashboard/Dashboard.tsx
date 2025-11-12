@@ -62,14 +62,17 @@ function Dashboard() {
   const [messageInput, setMessageInput] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [gettingAiMessage, setGettingAiMessage] = useState(false)
-
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const phrases = [
-    "How can I help you today 🙂",
-    "How may I assist you?",
-    "What would you like help with?"
-  ];
+  const getRandomWelcomeMessage = () => {
+    const phrases = [
+      "How can I help you today 🙂",
+      "How may I assist you?",
+      "What would you like help with?"
+    ];
+    return phrases[Math.floor(Math.random() * phrases.length)];
+  }
+  const [randomWelcomeMessage, setRandomWelcomeMessage] = useState<string>(getRandomWelcomeMessage());
 
   useEffect(() => {
     if (!isAuthenticated)
@@ -107,6 +110,7 @@ function Dashboard() {
   }, [selectedChat, isAuthenticated])
 
   useEffect(() => {
+    if (gettingAiMessage) return
     messagesEndRef.current?.scrollIntoView({behavior: 'smooth'})
   }, [messages])
 
@@ -222,6 +226,7 @@ function Dashboard() {
 
   const handleCreateChat = async () => {
     setSelectedChat(-1);
+    setRandomWelcomeMessage(getRandomWelcomeMessage());
     setMessages([]);
   }
 
@@ -433,10 +438,11 @@ function Dashboard() {
                     <MessageBubble key={message.id} message={message}/>
                   </div>
                 ))}
+                <div ref={messagesEndRef}/>
               </>
             ) : (
               <div className="flex justify-center p-16 text-2xl">
-                {phrases[Math.floor(Math.random() * phrases.length)]}
+                {randomWelcomeMessage}
               </div>
             )}
           </ScrollArea>
