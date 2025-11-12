@@ -20,6 +20,7 @@ import {useAuth} from "@/states/AuthContext.tsx";
 import {useTheme} from "@/states/ThemeProvider.tsx";
 import type {User} from "@/types/user.ts";
 import {useLocation, useNavigate} from "react-router-dom";
+import {useState} from "react";
 
 type UserAvatarProps = {
   user: User;
@@ -40,6 +41,7 @@ function UserAvatar({user, className}: UserAvatarProps) {
 export function SidebarUser({user}: {
   user: User
 }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate()
   const location = useLocation();
   const {isMobile} = useSidebar();
@@ -53,8 +55,9 @@ export function SidebarUser({user}: {
   const handlers = {
     account: () => toast.info("Account settings coming soon"),
     settings: () => toast.info("Settings coming soon"),
-    admin_dashboard: () => {
+    admin_dashboard: async () => {
       if (isAdmin) {
+        setDropdownOpen(false);
         setOpenMobile(false);
         navigate('/dashboard/admin');
       } else {
@@ -62,6 +65,8 @@ export function SidebarUser({user}: {
       }
     },
     logout: () => {
+      setDropdownOpen(false);
+      setOpenMobile(false);
       logout();
       toast.success("Logged out successfully");
     }
@@ -70,8 +75,10 @@ export function SidebarUser({user}: {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <DropdownMenu open={dropdownOpen}>
+          <DropdownMenuTrigger asChild onClick={() => {
+            setDropdownOpen(prev => !prev);
+          }}>
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
