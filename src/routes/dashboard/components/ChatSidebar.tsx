@@ -11,7 +11,7 @@ import {
 import {Button} from "@/components/ui/button.tsx";
 import {MessageSquare, Plus} from "lucide-react";
 import {Separator} from "@/components/ui/separator.tsx";
-import {NavUser} from "@/components/nav/NavUser.tsx";
+import {SidebarUser} from "@/components/sidebar/SidebarUser.tsx";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {ComputeNodeSwitcher} from "@/routes/dashboard/components/ComputeNodeSwitcher.tsx";
 
@@ -85,7 +85,7 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedN
         <div className="p-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
           {chats.length} chat{chats.length !== 1 ? 's' : ''}
         </div>
-        <NavUser user={user!} />
+        <SidebarUser user={user!} />
       </SidebarFooter>
       <SidebarRail/>
     </Sidebar>

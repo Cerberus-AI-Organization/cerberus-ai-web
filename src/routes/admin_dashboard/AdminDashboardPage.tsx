@@ -14,7 +14,7 @@ import {
   SidebarRail, SidebarTrigger,
 } from "@/components/ui/sidebar"
 import {Separator} from "@/components/ui/separator.tsx";
-import {NavUser} from "@/components/nav/NavUser.tsx";
+import {SidebarUser} from "@/components/sidebar/SidebarUser.tsx";
 import {Button} from "@/components/ui/button";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {useState} from "react";
@@ -68,7 +68,7 @@ function Nav({navItems, selectedNavItem, onSelectedItem, ...props}: React.Compon
           <ArrowLeft className="group-data-[collapsible=icon]:block hidden"/>
           <span className="group-data-[collapsible=icon]:hidden">Back</span>
         </Button>
-        <NavUser user={user!}/>
+        <SidebarUser user={user!}/>
       </SidebarFooter>
       <SidebarRail/>
     </Sidebar>

@@ -37,7 +37,7 @@ function UserAvatar({user, className}: UserAvatarProps) {
   );
 }
 
-export function NavUser({user}: {
+export function SidebarUser({user}: {
   user: User
 }) {
   const navigate = useNavigate()
@@ -45,6 +45,7 @@ export function NavUser({user}: {
   const {isMobile} = useSidebar();
   const {logout} = useAuth();
   const {theme, setTheme} = useTheme();
+  const {setOpenMobile} = useSidebar();
 
   const isAdmin = user.role === 'admin';
   const onAdminDashboard = location.pathname.startsWith('/dashboard/admin');
@@ -54,7 +55,8 @@ export function NavUser({user}: {
     settings: () => toast.info("Settings coming soon"),
     admin_dashboard: () => {
       if (isAdmin) {
-        navigate('/dashboard/admin')
+        setOpenMobile(false);
+        navigate('/dashboard/admin');
       } else {
         toast.error("You do not have permission to access this page")
       }
