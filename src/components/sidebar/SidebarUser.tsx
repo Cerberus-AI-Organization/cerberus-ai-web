@@ -20,7 +20,7 @@ import {useAuth} from "@/states/AuthContext.tsx";
 import {useTheme} from "@/states/ThemeProvider.tsx";
 import type {User} from "@/types/user.ts";
 import {useLocation, useNavigate} from "react-router-dom";
-import {useState} from "react";
+import sleep from "@/lib/sleep.ts";
 
 type UserAvatarProps = {
   user: User;
@@ -41,7 +41,6 @@ function UserAvatar({user, className}: UserAvatarProps) {
 export function SidebarUser({user}: {
   user: User
 }) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate()
   const location = useLocation();
   const {isMobile} = useSidebar();
@@ -57,15 +56,14 @@ export function SidebarUser({user}: {
     settings: () => toast.info("Settings coming soon"),
     admin_dashboard: async () => {
       if (isAdmin) {
-        setDropdownOpen(false);
         setOpenMobile(false);
+        await sleep(100);
         navigate('/dashboard/admin');
       } else {
         toast.error("You do not have permission to access this page")
       }
     },
     logout: () => {
-      setDropdownOpen(false);
       setOpenMobile(false);
       logout();
       toast.success("Logged out successfully");
@@ -75,10 +73,8 @@ export function SidebarUser({user}: {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu open={dropdownOpen}>
-          <DropdownMenuTrigger asChild onClick={() => {
-            setDropdownOpen(prev => !prev);
-          }}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
