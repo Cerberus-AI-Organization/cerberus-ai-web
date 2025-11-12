@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/sidebar"
 import {Separator} from "@/components/ui/separator"
 import {Button} from "@/components/ui/button"
-import {Input} from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -39,8 +38,12 @@ import ChatSidebar from "@/routes/dashboard/components/ChatSidebar.tsx";
 import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {API_URL} from "@/lib/api.ts";
+import {Textarea} from "@/components/ui/textarea.tsx";
+import {useIsMobile} from "@/hooks/use-mobile.ts";
+import {useSearchParams} from "react-router-dom";
 
 function Dashboard() {
+  const [searchParams] = useSearchParams();
   const {isAuthenticated, token} = useAuth();
   const [nodes, setNodes] = useState<ComputeNode[]>([])
   const [models, setModels] = useState<ComputeNodeModel[]>([])
@@ -54,12 +57,19 @@ function Dashboard() {
   const [selectedModel, setSelectedModel] = useState<string | null>(() => {
     return localStorage.getItem('preferredModel');
   })
-  const [selectedChat, setSelectedChat] = useState<number>(-1);
+  const isMobile = useIsMobile()
+  const [selectedChat, setSelectedChat] = useState<number>(Number(searchParams.get('chat')) || -1);
   const [messageInput, setMessageInput] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [gettingAiMessage, setGettingAiMessage] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const phrases = [
+    "How can I help you today 🙂",
+    "How may I assist you?",
+    "What would you like help with?"
+  ];
 
   useEffect(() => {
     if (!isAuthenticated)
@@ -385,11 +395,11 @@ function Dashboard() {
         nodes={nodes}
         onSelectNode={setSelectedNode}
       />
-      <SidebarInset className="flex flex-col h-[100dvh] w-full overflow-x-hidden">
+      <SidebarInset className="flex flex-col h-[100dvh] w-full">
         <header
-          className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 overflow-x-hidden">
+          className="flex flex-shrink-0 h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 overflow-x-hidden">
           <div className="flex items-center gap-2 px-4 w-full">
-            <SidebarTrigger className="-ml-1" />
+            <SidebarTrigger className="-ml-1"/>
             <Separator orientation="vertical" className="mr-2 h-4"/>
             <Breadcrumb>
               <BreadcrumbList>
@@ -413,65 +423,63 @@ function Dashboard() {
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 flex flex-col w-full overflow-x-hidden">
-          <ScrollArea className="flex-1 min-h-0 w-full">
-            <div className="p-4 w-full space-y-4">
-              {selectedChat ? (
-                <>
-                  {messages.map((message) => (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ScrollArea className="flex h-full w-full">
+            {selectedChat !== -1 ? (
+              <>
+                {messages.map((message) => (
+                  <div className="p-4">
                     <MessageBubble key={message.id} message={message}/>
-                  ))}
-                  <div ref={messagesEndRef}/>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Select a chat to start messaging
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {selectedChat && (
-            <div className="border-t p-4 shrink-0 overflow-x-hidden">
-              <div className="max-w-4xl w-full space-y-2">
-                <div className="flex gap-2">
-                  <Select value={selectedModel || undefined} onValueChange={setSelectedModel}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select model"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {models.map((model) => (
-                        <SelectItem key={model.name} value={model.name}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                      {models.length === 0 && <SelectItem value={"no-models"} disabled>No Models Found</SelectItem>}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    disabled={gettingAiMessage}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={gettingAiMessage || !messageInput.trim()}
-                  >
-                    <Send className="h-4 w-4"/>
-                  </Button>
-                </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="flex justify-center p-16 text-2xl">
+                {phrases[Math.floor(Math.random() * phrases.length)]}
               </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        <div className="border-t p-4 flex-shrink-0">
+          <div className={`${isMobile ? "" : "flex"} w-full space-y-2 gap-2`}>
+            <div className="flex gap-2">
+              <Select value={selectedModel || undefined} onValueChange={setSelectedModel}>
+                <SelectTrigger className="w-46">
+                  <SelectValue placeholder="Select model"/>
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((model) => (
+                    <SelectItem key={model.name} value={model.name}>
+                      {model.name}
+                    </SelectItem>
+                  ))}
+                  {models.length === 0 && <SelectItem value={"no-models"} disabled>No Models Found</SelectItem>}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            <div className="flex-1 flex gap-2">
+              <Textarea
+                className="max-h-xs min-h-0"
+                placeholder="Type your message..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                disabled={gettingAiMessage}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={gettingAiMessage || !messageInput.trim()}
+              >
+                <Send className="h-4 w-4"/>
+              </Button>
+            </div>
+          </div>
         </div>
       </SidebarInset>
 

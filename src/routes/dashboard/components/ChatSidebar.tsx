@@ -14,6 +14,8 @@ import {Separator} from "@/components/ui/separator.tsx";
 import {SidebarUser} from "@/components/sidebar/SidebarUser.tsx";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {ComputeNodeSwitcher} from "@/routes/dashboard/components/ComputeNodeSwitcher.tsx";
+import {Link} from "react-router-dom";
+import {ScrollArea} from "@/components/ui/scroll-area.tsx";
 
 function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedNode, nodes, onSelectNode}: {
   chats: Chat[]
@@ -35,7 +37,7 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedN
             selectedNode={selectedNode}
             onSelectedNode={node => {
               onSelectNode(node.id);
-            }} />
+            }}/>
         </SidebarGroup>
 
         <Separator/>
@@ -62,10 +64,9 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedN
                   isActive={selectedChat === chat.id}
                   className="transition-all duration-75 ease-in"
                 >
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
+                  <Link
+                    to={`/dashboard?chat=${chat.id}`}
+                    onClick={() => {
                       onSelectChat(chat.id)
                     }}
                     className={selectedChat === chat.id ? "text-primary font-medium" : ""}
@@ -74,7 +75,7 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedN
                     <span className="group-data-[collapsible=icon]:hidden truncate">
                       {chat.title}
                     </span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -85,7 +86,7 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedN
         <div className="p-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
           {chats.length} chat{chats.length !== 1 ? 's' : ''}
         </div>
-        <SidebarUser user={user!} />
+        <SidebarUser user={user!}/>
       </SidebarFooter>
       <SidebarRail/>
     </Sidebar>
