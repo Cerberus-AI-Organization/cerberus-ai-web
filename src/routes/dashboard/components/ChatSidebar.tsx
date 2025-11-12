@@ -15,7 +15,6 @@ import {SidebarUser} from "@/components/sidebar/SidebarUser.tsx";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {ComputeNodeSwitcher} from "@/routes/dashboard/components/ComputeNodeSwitcher.tsx";
 import {Link} from "react-router-dom";
-import {ScrollArea} from "@/components/ui/scroll-area.tsx";
 
 function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedNode, nodes, onSelectNode}: {
   chats: Chat[]
