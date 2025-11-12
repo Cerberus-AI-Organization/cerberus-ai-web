@@ -20,7 +20,7 @@ import {useAuth} from "@/states/AuthContext.tsx";
 import {useTheme} from "@/states/ThemeProvider.tsx";
 import type {User} from "@/types/user.ts";
 import {useLocation, useNavigate} from "react-router-dom";
-import sleep from "@/lib/sleep.ts";
+import {useState} from "react";
 
 type UserAvatarProps = {
   user: User;
@@ -47,6 +47,7 @@ export function SidebarUser({user}: {
   const {logout} = useAuth();
   const {theme, setTheme} = useTheme();
   const {setOpenMobile} = useSidebar();
+  const [openDropdown, setOpenDropdown] = useState(false);
 
   const isAdmin = user.role === 'admin';
   const onAdminDashboard = location.pathname.startsWith('/dashboard/admin');
@@ -56,8 +57,6 @@ export function SidebarUser({user}: {
     settings: () => toast.info("Settings coming soon"),
     admin_dashboard: async () => {
       if (isAdmin) {
-        setOpenMobile(false);
-        await sleep(100);
         navigate('/dashboard/admin');
       } else {
         toast.error("You do not have permission to access this page")
@@ -73,11 +72,14 @@ export function SidebarUser({user}: {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              onClick={() => {
+
+              }}
             >
               <UserAvatar user={user}/>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -113,7 +115,12 @@ export function SidebarUser({user}: {
                 Settings
               </DropdownMenuItem>
               {isAdmin && !onAdminDashboard &&
-                <DropdownMenuItem onClick={handlers.admin_dashboard}>
+                <DropdownMenuItem onSelect={(e) => {
+                  e.preventDefault();
+                  setOpenMobile(false);
+                  setOpenDropdown(false);
+                  setTimeout(() => handlers.admin_dashboard(), 250);
+                }}>
                   <LucideAlignHorizontalDistributeCenter/>
                   Admin Dashboard
                 </DropdownMenuItem>
