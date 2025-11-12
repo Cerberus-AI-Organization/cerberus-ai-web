@@ -405,7 +405,8 @@ function Dashboard() {
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbPage>
-                    {selectedChatData?.title || 'New Chat'}
+                    {selectedChatData?.title.slice(0, 30) || 'New Chat'}
+                    {(selectedChatData?.title || "").length > 30 && '...'}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
