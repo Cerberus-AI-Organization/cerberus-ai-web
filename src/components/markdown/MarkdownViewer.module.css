@@ -1,4 +1,6 @@
 .proseWrapper {
+    --prose-base-size: 1rem;
+    font-size: var(--prose-base-size);
     max-width: 100%;
     overflow: hidden;
 }
@@ -87,11 +89,9 @@
 }
 
 /* Headings */
-.proseWrapper h1,
-.proseWrapper h2,
-.proseWrapper h3,
-.proseWrapper h4,
-.proseWrapper h5,
-.proseWrapper h6 {
-    color: var(--color-primary);
-}
+.h1 { font-size: calc(var(--prose-base-size) * 2);     font-weight: 700; margin: 0.67em 0; }
+.h2 { font-size: calc(var(--prose-base-size) * 1.75);  font-weight: 700; margin: 0.75em 0; }
+.h3 { font-size: calc(var(--prose-base-size) * 1.5);   font-weight: 600; margin: 0.83em 0; }
+.h4 { font-size: calc(var(--prose-base-size) * 1.25);  font-weight: 600; margin: 1em 0; }
+.h5 { font-size: calc(var(--prose-base-size) * 1.1);   font-weight: 500; margin: 1.1em 0; }
+.h6 { font-size: calc(var(--prose-base-size) * 1);     font-weight: 500; margin: 1.2em 0; color: var(--color-primary); }

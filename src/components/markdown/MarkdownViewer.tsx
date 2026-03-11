@@ -12,9 +12,10 @@ import styles from './MarkdownViewer.module.css';
 type Props = {
   content: string;
   className?: string;
+  fontSize?: string;
 };
 
-export default function MarkdownViewer({content, className = ""}: Props) {
+export default function MarkdownViewer({content, className = "", fontSize = "1rem"}: Props) {
   const {theme} = useTheme();
 
   const preview = useMemo(() => {
@@ -66,14 +67,23 @@ export default function MarkdownViewer({content, className = ""}: Props) {
           li: ({children}) => <li className={styles.li}>{children}</li>,
           ol: ({children}) => <ol className={styles.ol}>{children}</ol>,
           ul: ({children}) => <ul className={styles.ul}>{children}</ul>,
+          h1: ({children}) => <h1 className={styles.h1}>{children}</h1>,
+          h2: ({children}) => <h2 className={styles.h2}>{children}</h2>,
+          h3: ({children}) => <h3 className={styles.h3}>{children}</h3>,
+          h4: ({children}) => <h4 className={styles.h4}>{children}</h4>,
+          h5: ({children}) => <h5 className={styles.h5}>{children}</h5>,
+          h6: ({children}) => <h6 className={styles.h6}>{children}</h6>,
         }}
       />
     );
   }, [content, theme]);
 
   return (
-    <div className={`overflow-hidden ${className}`}>
-      <div className="w-full max-w-full overflow-x-auto">
+    <div
+      className={`overflow-hidden ${className}`}
+      style={{ "--prose-base-size": fontSize } as React.CSSProperties}
+    >
+      <div className="w-full max-w-full overflow-x-auto ${styles.proseWrapper}">
         {preview}
       </div>
     </div>

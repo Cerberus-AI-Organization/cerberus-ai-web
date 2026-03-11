@@ -14,13 +14,6 @@ import {
 import {Separator} from "@/components/ui/separator"
 import {Button} from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -33,7 +26,7 @@ import {
 import {ScrollArea} from "@/components/ui/scroll-area"
 import type {ComputeNode, ComputeNodeModel} from "@/types/computeNode.ts";
 import type {Chat, Message} from "@/types/chat.ts";
-import MessageBubble from "@/routes/dashboard/components/MessageBubble.tsx";
+import MessageBubble, { type AIState } from "@/routes/dashboard/components/MessageBubble.tsx";
 import ChatSidebar from "@/routes/dashboard/components/ChatSidebar.tsx";
 import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext.tsx";
@@ -41,6 +34,8 @@ import {API_URL} from "@/lib/api.ts";
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {useIsMobile} from "@/hooks/use-mobile.ts";
 import {useSearchParams} from "react-router-dom";
+import { ModelConfigPopover, ragLevelToLimit, type RagLevel } from "./components/ModelConfigPopover"
+
 
 function Dashboard() {
   const [searchParams] = useSearchParams();
@@ -49,6 +44,9 @@ function Dashboard() {
   const [models, setModels] = useState<ComputeNodeModel[]>([])
   const [chats, setChats] = useState<Chat[]>([])
   const [messages, setMessages] = useState<Message[]>([])
+  const [ragLevel, setRagLevel] = useState<RagLevel>("medium")
+  const [useRagAdvanced, setUseRagAdvanced] = useState(false)
+  const [useWebSearch, setUseWebSearch] = useState(true)
 
   const [selectedNode, setSelectedNode] = useState<number | null>(() => {
     const saved = localStorage.getItem('preferredComputeNode');
@@ -62,6 +60,7 @@ function Dashboard() {
   const [messageInput, setMessageInput] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [gettingAiMessage, setGettingAiMessage] = useState(false)
+  const [currentMessageState, setCurrentMessageState] = useState<AIState | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const getRandomWelcomeMessage = () => {
@@ -129,16 +128,22 @@ function Dashboard() {
 
       const data: ComputeNode[] = await response.json();
       setNodes(data)
-      if (data.length > 0 && !selectedNode) {
+      if (data.length > 0) {
         const savedNodeId = localStorage.getItem('preferredComputeNode');
         const preferredNode = savedNodeId ? data.find(n =>
-          n.id === Number(savedNodeId) && n.status == "online") : null;
+          n.id === Number(savedNodeId)) : undefined;
 
-        setSelectedNode(preferredNode?.id || data.find(n => n.status === 'online')?.id || data[0].id);
+        if (preferredNode && preferredNode.status === 'online') {
+          setSelectedNode(preferredNode.id);
+          return
+        }
+
+        const sortedByPriority = data.sort((a, b) => a.priority - b.priority);
+        setSelectedNode(sortedByPriority.find(n => n.status === 'online')?.id || null);
       }
       // toast.success("Nodes loaded successfully");
     } catch {
-      toast.error("Failed to load nodes");
+      // toast.error("Failed to load nodes");
     }
   }
 
@@ -263,6 +268,7 @@ function Dashboard() {
     if (!messageInput.trim() || !selectedChat || !selectedNode || !selectedModel) return
 
     setGettingAiMessage(true)
+    setCurrentMessageState(null)
     let chatId = selectedChat;
 
     try {
@@ -270,17 +276,21 @@ function Dashboard() {
         ...prev, {
           id: -1,
           chat_id: chatId,
+          think: null,
           content: messageInput,
           created_at: new Date().toLocaleString(),
           sender_id: null,
-          sender_type: 'user'
+          sender_type: 'user',
+          message_rag: null
         }, {
           id: -2,
           chat_id: chatId,
+          think: null,
           content: '',
           created_at: new Date().toLocaleString(),
           sender_id: null,
-          sender_type: 'ai'
+          sender_type: 'ai',
+          message_rag: null
         }
       ]);
 
@@ -291,9 +301,14 @@ function Dashboard() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          content: messageInput,
           node_id: selectedNode,
-          model: selectedModel
+          model: selectedModel,
+          rag: {
+            limit: ragLevelToLimit(ragLevel),
+            use_advanced: useRagAdvanced,
+            use_web_search: true
+          },
+          content: messageInput,
         })
       });
 
@@ -309,6 +324,7 @@ function Dashboard() {
         throw new Error('Failed to read response');
       }
 
+      let currentThink = '';
       let currentContent = '';
       let buffer = '';
 
@@ -340,8 +356,17 @@ function Dashboard() {
               updated[userMessageIndex] = data.message;
               return updated;
             });
+          } else if ('generated_think' in data) {
+            currentThink += data.generated_think;
+            setMessages(prev => {
+              const updated = [...prev]
+              const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
+              if (aiMessageIndex === -1) return updated;
+              updated[aiMessageIndex] = {...updated[aiMessageIndex], think: currentThink};
+              return updated;
+            });
           } else if ('generated_chunk' in data) {
-            currentContent += data.generated_chunk.content;
+            currentContent += data.generated_chunk;
             setMessages(prev => {
               const updated = [...prev]
               const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
@@ -354,9 +379,13 @@ function Dashboard() {
               const updated = [...prev]
               const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
               if (aiMessageIndex === -1) return updated;
+              const oldMessage = updated[aiMessageIndex];
               updated[aiMessageIndex] = data.generated_message;
+              updated[aiMessageIndex].think = oldMessage.think;
+              updated[aiMessageIndex].message_rag = oldMessage.message_rag;
               return updated;
             });
+            setCurrentMessageState(null)
           } else if ('chat' in data) {
             if (chatId === -1) {
               chatId = data.chat.id;
@@ -370,7 +399,25 @@ function Dashboard() {
                 return updated;
               })
               setSelectedChat(chatId);
+            } else {
+              setChats(prev => {
+                const updated = [...prev]
+                const chatIndex = updated.findIndex(c => c.id === chatId);
+                if (chatIndex === -1) return updated;
+                updated[chatIndex] = data.chat;
+                return updated;
+              })
             }
+          } else if ('rag_results' in data){
+            setMessages(prev => {
+              const updated = [...prev]
+              const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
+              if (aiMessageIndex === -1) return updated;
+              updated[aiMessageIndex] = {...updated[aiMessageIndex], message_rag: data.rag_results};
+              return updated;
+            });
+          } else if ('generation_state' in data) {
+            setCurrentMessageState(data.generation_state);
           } else if ('error' in data) {
             throw new Error(data.error);
           }
@@ -435,7 +482,7 @@ function Dashboard() {
               <>
                 {messages.map((message) => (
                   <div className="p-4">
-                    <MessageBubble key={message.id} message={message}/>
+                    <MessageBubble key={message.id} message={message} currentState={messages.indexOf(message) == messages.length - 1 ? currentMessageState : null}/>
                   </div>
                 ))}
                 <div ref={messagesEndRef}/>
@@ -450,27 +497,47 @@ function Dashboard() {
 
         <div className="border-t p-4 flex-shrink-0">
           <div className={`${isMobile ? "" : "flex"} w-full space-y-2 gap-2`}>
-            <div className="flex gap-2">
-              <Select value={selectedModel || undefined} onValueChange={setSelectedModel}>
-                <SelectTrigger className="w-46">
-                  <SelectValue placeholder="Select model"/>
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map((model) => (
-                    <SelectItem key={model.name} value={model.name}>
-                      {model.name}
-                    </SelectItem>
-                  ))}
-                  {models.length === 0 && <SelectItem value={"no-models"} disabled>No Models Found</SelectItem>}
-                </SelectContent>
-              </Select>
-            </div>
+            <ModelConfigPopover
+              models={models}
+              selectedModel={selectedModel}
+              onSelectModel={setSelectedModel}
+              ragLevel={ragLevel}
+              onRagLevelChange={setRagLevel}
+              ragAdvanced={useRagAdvanced}
+              onRagAdvancedChange={setUseRagAdvanced}
+              webSearch={useWebSearch}
+              onWebSearchChange={setUseWebSearch}
+              disabled={gettingAiMessage}
+            />
             <div className="flex-1 flex gap-2">
               <Textarea
                 className="max-h-xs min-h-0"
                 placeholder="Type your message..."
                 value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
+                onChange={(e) => {
+                  const oldMessageInput = messageInput;
+                  setMessageInput(e.target.value);
+
+                  if (oldMessageInput.trim().length == 0 && e.target.value.trim().length > 0) {
+                    if (selectedNode == -1) return
+                    fetch(`${API_URL}/compute-nodes/${selectedNode}/preload`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                      },
+                      body: JSON.stringify({model: selectedModel}),
+                    }).then(async res => {
+                      if (res.ok) {
+                        const data = await res.json()
+                        console.log("Preloaded Model: ", data);
+                      } else {
+                        console.error("Failed to preload model");
+                      }
+                    })
+                  }
+
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();

@@ -34,6 +34,7 @@ import {Card} from "@/components/ui/card.tsx";
 import {LucideRefreshCw, CassetteTapeIcon, Pencil, Trash2} from "lucide-react";
 import type {ComputeNodeDetail, ComputeNodeModel} from "@/types/computeNode.ts";
 import {API_URL} from "@/lib/api.ts";
+import {Tooltip, TooltipTrigger, TooltipContent} from "@/components/ui/tooltip.tsx";
 
 function AdminDashboardComputeNodes() {
   const {isAuthenticated, token} = useAuth();
@@ -56,11 +57,17 @@ function AdminDashboardComputeNodes() {
   const [selectedNode, setSelectedNode] = useState<ComputeNodeDetail | null>(null);
   const [sortConfig, setSortConfig] = useState<{ column: keyof ComputeNodeDetail; direction: 'asc' | 'desc' } | null>(null);
   const [filterText, setFilterText] = useState("");
-  const [formData, setFormData] = useState({
-    hostname: "",
-    ip: "",
-    port: "11434",
-  });
+  const [formData, setFormData] = useState(getDefaultFormData());
+
+  function getDefaultFormData() {
+    return {
+      hostname: "",
+      ip: "",
+      port: "11434",
+      max_ctx: "16384",
+      max_layers_on_gpu: "-1"
+    }
+  }
 
   async function fetchNodes() {
     try {
@@ -188,7 +195,10 @@ function AdminDashboardComputeNodes() {
           <LucideRefreshCw className="size-4"/>
         </Button>
 
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog open={isCreateOpen} onOpenChange={open => {
+          setFormData(getDefaultFormData());
+          setIsCreateOpen(open);
+        }}>
           <DialogTrigger asChild>
             <Button>Add Node</Button>
           </DialogTrigger>
@@ -224,6 +234,49 @@ function AdminDashboardComputeNodes() {
                   value={formData.port}
                   onChange={(e) =>
                     setFormData({...formData, port: e.target.value})
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Label htmlFor="max-ctx">Max CTX</Label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Size of Context Window for models in tokens.</p>
+                    <p>Higher number will cost more graphics memory and slowdown generation if used.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Input
+                  id="max-ctx"
+                  value={formData.max_ctx}
+                  onChange={(e) =>
+                    setFormData({...formData, max_ctx: e.target.value})
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Label htmlFor="max-layers-on-gpu">Max Layers on Gpu</Label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      The maximum number of layers that can be processed on the GPU.
+                    </p>
+                    <p>
+                      Set to -1 to Automatic detection of the maximum number layers.
+                    </p>
+                    <p>
+                      Use to sideload to CPU to lower the graphics memory usage.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <Input
+                  id="max-layers-on-gpu"
+                  value={formData.max_layers_on_gpu}
+                  onChange={(e) =>
+                    setFormData({...formData, max_layers_on_gpu: e.target.value})
                   }
                 />
               </div>
@@ -333,6 +386,8 @@ function AdminDashboardComputeNodes() {
                           hostname: node.hostname,
                           ip: node.ip,
                           port: node.port.toString(),
+                          max_ctx: node.max_ctx.toString(),
+                          max_layers_on_gpu: node.max_layers_on_gpu.toString()
                         });
                         setIsEditOpen(true);
                       }}
@@ -386,6 +441,49 @@ function AdminDashboardComputeNodes() {
                 value={formData.port}
                 onChange={(e) =>
                   setFormData({...formData, port: e.target.value})
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label htmlFor="edit-max-ctx">Max CTX</Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Size of Context Window for models in tokens.</p>
+                  <p>Higher number will cost more graphics memory and slowdown generation if used.</p>
+                </TooltipContent>
+              </Tooltip>
+              <Input
+                id="edit-max-ctx"
+                value={formData.max_ctx}
+                onChange={(e) =>
+                  setFormData({...formData, max_ctx: e.target.value})
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label htmlFor="edit-max-layers-on-gpu">Max Layers on Gpu</Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    The maximum number of layers that can be processed on the GPU.
+                  </p>
+                  <p>
+                    Set to -1 to Automatic detection of the maximum number layers.
+                  </p>
+                  <p>
+                    Use to sideload to CPU to lower the graphics memory usage.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+              <Input
+                id="edit-max-layers-on-gpu"
+                value={formData.max_layers_on_gpu}
+                onChange={(e) =>
+                  setFormData({...formData, max_layers_on_gpu: e.target.value})
                 }
               />
             </div>
