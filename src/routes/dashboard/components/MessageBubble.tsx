@@ -104,7 +104,7 @@ function MessageBubble({ message, currentState }: MessageBubbleProps) {
     >
       {/* Avatar */}
       <div
-        className={`flex w-8 h-8 shrink-0 items-center justify-center rounded-full shadow-sm ring-1
+        className={`hidden sm:flex w-8 h-8 shrink-0 items-center justify-center rounded-full shadow-sm ring-1
           ${isUser
           ? "bg-primary text-primary-foreground ring-primary/30"
           : "bg-muted text-muted-foreground ring-border/50"
