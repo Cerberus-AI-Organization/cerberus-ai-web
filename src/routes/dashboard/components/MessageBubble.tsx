@@ -126,7 +126,7 @@ function MessageBubble({ message, currentState }: MessageBubbleProps) {
 
         {/* Bubble */}
         <div
-          className={`rounded-2xl px-4 py-2.5 max-w-[65vw] sm:max-w-[50vw] break-words shadow-sm
+          className={`rounded-2xl px-4 py-2.5 max-w-[80vw] sm:max-w-[60vw] break-words shadow-sm
             ${isUser
             ? "bg-primary text-primary-foreground rounded-tr-sm"
             : "bg-muted text-foreground rounded-tl-sm border border-border/30"
