@@ -26,7 +26,7 @@ import {
 import {ScrollArea} from "@/components/ui/scroll-area"
 import type {ComputeNode, ComputeNodeModel} from "@/types/computeNode.ts";
 import type {Chat, Message} from "@/types/chat.ts";
-import MessageBubble, { type AIState } from "@/routes/dashboard/components/MessageBubble.tsx";
+import MessageBubble, {type AIState} from "@/routes/dashboard/components/MessageBubble.tsx";
 import ChatSidebar from "@/routes/dashboard/components/ChatSidebar.tsx";
 import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext.tsx";
@@ -34,7 +34,8 @@ import {API_URL} from "@/lib/api.ts";
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {useIsMobile} from "@/hooks/use-mobile.ts";
 import {useSearchParams} from "react-router-dom";
-import { ModelConfigPopover, ragLevelToLimit, type RagLevel } from "./components/ModelConfigPopover"
+import {LLMConfigPopover, ragLevelToLimit, type RagLevel} from "./components/LLMConfigPopover.tsx"
+import {CHAT_MODES, MODE_ICONS, type ChatModeId} from "./types/chatMode"
 
 
 function Dashboard() {
@@ -47,6 +48,7 @@ function Dashboard() {
   const [ragLevel, setRagLevel] = useState<RagLevel>("medium")
   const [useRagAdvanced, setUseRagAdvanced] = useState(false)
   const [useWebSearch, setUseWebSearch] = useState(true)
+  const [selectedMode, setSelectedMode] = useState<ChatModeId>("chat")
 
   const [selectedNode, setSelectedNode] = useState<number | null>(() => {
     const saved = localStorage.getItem('preferredComputeNode');
@@ -139,7 +141,7 @@ function Dashboard() {
         }
 
         const sortedByPriority = data.sort((a, b) => a.priority - b.priority);
-        setSelectedNode(sortedByPriority.find(n => n.status === 'online')?.id || null);
+        setSelectedNode(sortedByPriority.find(n => n.status === 'online')?.id || selectedNode || null);
       }
       // toast.success("Nodes loaded successfully");
     } catch {
@@ -303,6 +305,7 @@ function Dashboard() {
         body: JSON.stringify({
           node_id: selectedNode,
           model: selectedModel,
+          mode: selectedMode,
           rag: {
             limit: ragLevelToLimit(ragLevel),
             use_advanced: useRagAdvanced,
@@ -408,7 +411,7 @@ function Dashboard() {
                 return updated;
               })
             }
-          } else if ('rag_results' in data){
+          } else if ('rag_results' in data) {
             setMessages(prev => {
               const updated = [...prev]
               const aiMessageIndex = updated.map(m => m.sender_type).lastIndexOf('ai');
@@ -443,9 +446,8 @@ function Dashboard() {
         selectedChat={selectedChat}
         onSelectChat={setSelectedChat}
         onCreateChat={handleCreateChat}
-        selectedNode={selectedNode}
-        nodes={nodes}
-        onSelectNode={setSelectedNode}
+        selectedMode={selectedMode}
+        onSelectMode={setSelectedMode}
       />
       <SidebarInset className="flex flex-col h-[100dvh] w-full">
         <header
@@ -482,14 +484,35 @@ function Dashboard() {
               <>
                 {messages.map((message) => (
                   <div className="p-4">
-                    <MessageBubble key={message.id} message={message} currentState={messages.indexOf(message) == messages.length - 1 ? currentMessageState : null}/>
+                    <MessageBubble key={message.id} message={message}
+                                   currentState={messages.indexOf(message) == messages.length - 1 ? currentMessageState : null}/>
                   </div>
                 ))}
                 <div ref={messagesEndRef}/>
               </>
             ) : (
-              <div className="flex justify-center p-16 text-2xl">
-                {randomWelcomeMessage}
+              <div className="flex flex-col items-center justify-center h-full gap-8 p-8">
+                <h2 className="text-2xl font-semibold">{randomWelcomeMessage}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
+                  {CHAT_MODES.map((mode) => {
+                      const ModeIcon = MODE_ICONS[mode.id];
+                      return (<button
+                          key={mode.id}
+                          onClick={() => setSelectedMode(mode.id)}
+                          className={`flex flex-col items-center gap-2 p-6 rounded-xl border-2 transition-all text-center cursor-pointer
+                        ${selectedMode === mode.id
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/50 hover:bg-muted"
+                          }`}
+                        >
+                          <ModeIcon className="size-3.5 shrink-0"/>
+                          <span className="font-medium">{mode.label}</span>
+                          <span className="text-xs text-muted-foreground">{mode.description}</span>
+                        </button>
+                      )
+                    }
+                  )}
+                </div>
               </div>
             )}
           </ScrollArea>
@@ -497,7 +520,10 @@ function Dashboard() {
 
         <div className="border-t p-4 flex-shrink-0">
           <div className={`${isMobile ? "" : "flex"} w-full space-y-2 gap-2`}>
-            <ModelConfigPopover
+            <LLMConfigPopover
+              nodes={nodes}
+              selectedNode={selectedNode}
+              onSelectNode={setSelectedNode}
               models={models}
               selectedModel={selectedModel}
               onSelectModel={setSelectedModel}

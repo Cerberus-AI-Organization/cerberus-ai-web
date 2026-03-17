@@ -1,5 +1,4 @@
 import type {Chat} from "@/types/chat.ts";
-import type {ComputeNode} from "@/types/computeNode.ts";
 import {
   Sidebar,
   SidebarContent, SidebarFooter,
@@ -13,17 +12,17 @@ import {MessageSquare, Plus} from "lucide-react";
 import {Separator} from "@/components/ui/separator.tsx";
 import {SidebarUser} from "@/components/sidebar/SidebarUser.tsx";
 import {useAuth} from "@/states/AuthContext.tsx";
-import {ComputeNodeSwitcher} from "@/routes/dashboard/components/ComputeNodeSwitcher.tsx";
 import {Link} from "react-router-dom";
+import {type ChatModeId} from "../types/chatMode"
+import {ChatModeSwitcher} from "@/routes/dashboard/components/ChatModeSwitcher.tsx";
 
-function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedNode, nodes, onSelectNode}: {
+function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedMode, onSelectMode}: {
   chats: Chat[]
   selectedChat: number | null
   onSelectChat: (chatId: number) => void
   onCreateChat: () => void
-  selectedNode: number | null
-  nodes: ComputeNode[]
-  onSelectNode: (nodeId: number) => void
+  selectedMode: ChatModeId
+  onSelectMode: (mode: ChatModeId) => void
 }) {
   const {user} = useAuth();
 
@@ -31,14 +30,8 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedN
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <ComputeNodeSwitcher
-            nodes={nodes}
-            selectedNode={selectedNode}
-            onSelectedNode={node => {
-              onSelectNode(node.id);
-            }}/>
+          <ChatModeSwitcher selectedMode={selectedMode} onSelectMode={onSelectMode}/>
         </SidebarGroup>
-
         <Separator/>
 
         <SidebarGroup>
