@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef} from "react"
-import {Send, Trash2} from "lucide-react"
+import {Send, Trash2, Share2, Loader2} from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -36,7 +36,7 @@ import {useIsMobile} from "@/hooks/use-mobile.ts";
 import {useSearchParams} from "react-router-dom";
 import {LLMConfigPopover, ragLevelToLimit, type RagLevel} from "./components/LLMConfigPopover.tsx"
 import {CHAT_MODES, MODE_ICONS, type ChatModeId} from "./types/chatMode"
-
+import { useReactToPrint } from "react-to-print"
 
 function Dashboard() {
   const [searchParams] = useSearchParams();
@@ -49,6 +49,8 @@ function Dashboard() {
   const [useRagAdvanced, setUseRagAdvanced] = useState(false)
   const [useWebSearch, setUseWebSearch] = useState(true)
   const [selectedMode, setSelectedMode] = useState<ChatModeId>("chat")
+  const printRef = useRef<HTMLDivElement>(null)
+  const [isSharing, setIsSharing] = useState(false)
 
   const [selectedNode, setSelectedNode] = useState<number | null>(() => {
     const saved = localStorage.getItem('preferredComputeNode');
@@ -74,6 +76,12 @@ function Dashboard() {
     return phrases[Math.floor(Math.random() * phrases.length)];
   }
   const [randomWelcomeMessage, setRandomWelcomeMessage] = useState<string>(getRandomWelcomeMessage());
+
+  const handleExportToPDF = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: chats.find(c => c.id == selectedChat)?.title || "Chat",
+    onAfterPrint: () => setIsSharing(false),
+  })
 
   useEffect(() => {
     if (!isAuthenticated)
@@ -475,10 +483,26 @@ function Dashboard() {
                 <Trash2 className="h-4 w-4"/>
               </Button>
             )}
+            {selectedChat !== -1 && messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={gettingAiMessage || isSharing}
+                onClick={() => {
+                  setIsSharing(true);
+                  handleExportToPDF();
+                }}
+              >
+                {!isSharing
+                  ? <Share2 className="h-4 w-4" />
+                  : <Loader2 className="w-4 h-4 animate-spin" />
+                }
+              </Button>
+            )}
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div ref={printRef} className="flex-1 flex flex-col overflow-hidden">
           <ScrollArea className="flex h-full w-full">
             {selectedChat !== -1 ? (
               <>
