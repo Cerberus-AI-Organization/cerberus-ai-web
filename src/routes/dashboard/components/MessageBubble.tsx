@@ -213,10 +213,11 @@ function MessageBubble({ message, currentState }: MessageBubbleProps) {
 
         {/* Timestamp */}
         <span className="text-[11px] text-muted-foreground/60 px-1">
-          {new Date(message.created_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {!isNaN(new Date(message.created_at).getTime()) &&
+            new Date(message.created_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
         </span>
       </div>
     </div>

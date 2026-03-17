@@ -427,7 +427,7 @@ function Dashboard() {
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error("Failed to send message");
-      loadMessages(chatId);
+      await loadMessages(chatId);
     } finally {
       setGettingAiMessage(false)
       setMessageInput('')
