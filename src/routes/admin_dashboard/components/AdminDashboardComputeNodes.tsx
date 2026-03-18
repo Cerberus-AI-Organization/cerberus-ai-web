@@ -111,6 +111,16 @@ function AdminDashboardComputeNodes() {
 
   const handleCreate = async () => {
     try {
+      const port = parseInt(formData.port, 10);
+      const priority = parseInt(formData.priority, 10);
+      const maxCtx = parseInt(formData.max_ctx, 10);
+      const maxLayers = parseInt(formData.max_layers_on_gpu, 10);
+
+      if ([port, priority, maxCtx, maxLayers].some(Number.isNaN)) {
+        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
+        return;
+      }
+
       const response = await fetch(`${API_URL}/compute-nodes`, {
         method: "POST",
         headers: {
@@ -120,10 +130,10 @@ function AdminDashboardComputeNodes() {
         body: JSON.stringify({
           hostname: formData.hostname,
           ip: formData.ip,
-          port: parseInt(formData.port),
-          priority: parseInt(formData.priority),
-          max_ctx: parseInt(formData.max_ctx),
-          max_layers_on_gpu: parseInt(formData.max_layers_on_gpu),
+          port: port,
+          priority: priority,
+          max_ctx: maxCtx,
+          max_layers_on_gpu: maxLayers,
         }),
       });
       if (response.ok) {
@@ -134,10 +144,7 @@ function AdminDashboardComputeNodes() {
         toast.error("Failed to create node");
       }
     } catch (error) {
-      if (error instanceof ParseError) {
-        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
-        return;
-      }
+      console.error("Error creating node:", error);
       toast.error("Error creating node");
     }
   };
@@ -145,6 +152,16 @@ function AdminDashboardComputeNodes() {
   const handleEdit = async () => {
     if (!selectedNode) return;
     try {
+      const port = parseInt(formData.port, 10);
+      const priority = parseInt(formData.priority, 10);
+      const maxCtx = parseInt(formData.max_ctx, 10);
+      const maxLayers = parseInt(formData.max_layers_on_gpu, 10);
+
+      if ([port, priority, maxCtx, maxLayers].some(Number.isNaN)) {
+        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
+        return;
+      }
+
       const response = await fetch(
         `${API_URL}/compute-nodes/${selectedNode.id}`,
         {
@@ -155,10 +172,10 @@ function AdminDashboardComputeNodes() {
           },
           body: JSON.stringify({
             hostname: formData.hostname,
-            port: parseInt(formData.port),
-            priority: parseInt(formData.priority),
-            max_ctx: parseInt(formData.max_ctx),
-            max_layers_on_gpu: parseInt(formData.max_layers_on_gpu),
+            port: port,
+            priority: priority,
+            max_ctx: maxCtx,
+            max_layers_on_gpu: maxLayers,
           }),
         }
       );
@@ -170,10 +187,7 @@ function AdminDashboardComputeNodes() {
         toast.error("Failed to update node");
       }
     } catch (error) {
-      if (error instanceof ParseError) {
-        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
-        return;
-      }
+      console.error("Error updating node:", error);
       toast.error("Error updating node");
     }
   };
