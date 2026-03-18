@@ -35,7 +35,6 @@ import {LucideRefreshCw, CassetteTapeIcon, Pencil, Trash2} from "lucide-react";
 import type {ComputeNodeDetail, ComputeNodeModel} from "@/types/computeNode.ts";
 import {API_URL} from "@/lib/api.ts";
 import {Tooltip, TooltipTrigger, TooltipContent} from "@/components/ui/tooltip.tsx";
-import {ParseError} from "katex";
 
 function AdminDashboardComputeNodes() {
   const {isAuthenticated, token} = useAuth();
