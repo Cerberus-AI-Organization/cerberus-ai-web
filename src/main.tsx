@@ -12,9 +12,10 @@ import AccessDeniedPage from "./routes/access_denied/AccessDeniedPage.tsx";
 import {ThemeProvider} from "@/states/ThemeProvider.tsx";
 import {Toaster} from "@/components/ui/sonner.tsx";
 import AdminDashboardPage from "./routes/admin_dashboard/AdminDashboardPage.tsx"
+import Home from "@/routes/home/Home.tsx";
 
 const router = createBrowserRouter([
-  {path: '/', element: <DevHome/>},
+  {path: '/', element: <Home/>},
   {path: '/login', element: <LoginPage/>},
   {path: '/access_denied', element: <AccessDeniedPage/>},
   {path: '/dev', element: <DevHome/>},
