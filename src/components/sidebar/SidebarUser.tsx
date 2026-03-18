@@ -1,4 +1,4 @@
-import {BadgeCheck, ChevronsUpDown, LogOut, Moon, Settings, LucideAlignHorizontalDistributeCenter, Sun} from "lucide-react"
+import {BookText, BadgeCheck, ChevronsUpDown, LogOut, Moon, Settings, LucideAlignHorizontalDistributeCenter, Sun} from "lucide-react"
 import {Avatar, AvatarFallback} from "@/components/ui/avatar.tsx"
 import {
   DropdownMenu,
@@ -53,6 +53,7 @@ export function SidebarUser({user}: {
   const onAdminDashboard = location.pathname.startsWith('/dashboard/admin');
 
   const handlers = {
+    website: () => navigate("/"),
     account: () => toast.info("Account settings coming soon"),
     settings: () => toast.info("Settings coming soon"),
     admin_dashboard: async () => {
@@ -106,6 +107,10 @@ export function SidebarUser({user}: {
             </DropdownMenuLabel>
             <DropdownMenuSeparator/>
             <DropdownMenuGroup>
+              <DropdownMenuItem onClick={handlers.website}>
+                <BookText/>
+                Website
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handlers.account}>
                 <BadgeCheck/>
                 Account
