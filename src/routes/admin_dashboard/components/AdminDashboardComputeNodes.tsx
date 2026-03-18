@@ -35,6 +35,7 @@ import {LucideRefreshCw, CassetteTapeIcon, Pencil, Trash2} from "lucide-react";
 import type {ComputeNodeDetail, ComputeNodeModel} from "@/types/computeNode.ts";
 import {API_URL} from "@/lib/api.ts";
 import {Tooltip, TooltipTrigger, TooltipContent} from "@/components/ui/tooltip.tsx";
+import {ParseError} from "katex";
 
 function AdminDashboardComputeNodes() {
   const {isAuthenticated, token} = useAuth();
@@ -64,6 +65,7 @@ function AdminDashboardComputeNodes() {
       hostname: "",
       ip: "",
       port: "11434",
+      priority: "1",
       max_ctx: "16384",
       max_layers_on_gpu: "-1"
     }
@@ -115,7 +117,14 @@ function AdminDashboardComputeNodes() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          hostname: formData.hostname,
+          ip: formData.ip,
+          port: parseInt(formData.port),
+          priority: parseInt(formData.priority),
+          max_ctx: parseInt(formData.max_ctx),
+          max_layers_on_gpu: parseInt(formData.max_layers_on_gpu),
+        }),
       });
       if (response.ok) {
         toast.success("Node created successfully");
@@ -124,8 +133,11 @@ function AdminDashboardComputeNodes() {
       } else {
         toast.error("Failed to create node");
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      if (error instanceof ParseError) {
+        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
+        return;
+      }
       toast.error("Error creating node");
     }
   };
@@ -141,7 +153,13 @@ function AdminDashboardComputeNodes() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            hostname: formData.hostname,
+            port: parseInt(formData.port),
+            priority: parseInt(formData.priority),
+            max_ctx: parseInt(formData.max_ctx),
+            max_layers_on_gpu: parseInt(formData.max_layers_on_gpu),
+          }),
         }
       );
       if (response.ok) {
@@ -151,8 +169,11 @@ function AdminDashboardComputeNodes() {
       } else {
         toast.error("Failed to update node");
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      if (error instanceof ParseError) {
+        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
+        return;
+      }
       toast.error("Error updating node");
     }
   };
@@ -240,6 +261,23 @@ function AdminDashboardComputeNodes() {
               <div className="grid gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
+                    <Label htmlFor="priotity">Priority</Label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Higher number will sort node higher and biggest will be used for knowledge creation.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Input
+                  id="priotity"
+                  value={formData.priority}
+                  onChange={(e) =>
+                    setFormData({...formData, priority: e.target.value})
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Label htmlFor="max-ctx">Max CTX</Label>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -321,6 +359,11 @@ function AdminDashboardComputeNodes() {
               }} className="cursor-pointer">
                 Created At {sortConfig?.column === 'created_at' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead onClick={() => {
+                setSortConfig(sortConfig?.column === 'priority' && sortConfig.direction === 'asc'
+                  ? {column: 'priority', direction: 'desc'}
+                  : {column: 'priority', direction: 'asc'});
+              }}>Priority</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -353,6 +396,7 @@ function AdminDashboardComputeNodes() {
                     minute: "2-digit",
                     second: "2-digit"
                   })}</TableCell>
+                  <TableCell>{node.priority}</TableCell>
                   <TableCell className="text-right">
                     <button
                       className="hover:text-foreground/70 mx-2"
@@ -386,6 +430,7 @@ function AdminDashboardComputeNodes() {
                           hostname: node.hostname,
                           ip: node.ip,
                           port: node.port.toString(),
+                          priority: node.priority.toString(),
                           max_ctx: node.max_ctx.toString(),
                           max_layers_on_gpu: node.max_layers_on_gpu.toString()
                         });
@@ -441,6 +486,23 @@ function AdminDashboardComputeNodes() {
                 value={formData.port}
                 onChange={(e) =>
                   setFormData({...formData, port: e.target.value})
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label htmlFor="edit-priotity">Priority</Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Higher number will sort node higher and biggest will be used for knowledge creation.</p>
+                </TooltipContent>
+              </Tooltip>
+              <Input
+                id="edit-priotity"
+                value={formData.priority}
+                onChange={(e) =>
+                  setFormData({...formData, priority: e.target.value})
                 }
               />
             </div>
