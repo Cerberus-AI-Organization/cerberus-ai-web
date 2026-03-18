@@ -60,8 +60,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
     setToken(data.token);
     try {
       localStorage.setItem('token', data.token);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       console.error('Could not save token');
     }
     return true;
@@ -72,8 +71,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
     setToken(null);
     try {
       localStorage.removeItem('token');
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       console.error('Could not remove token');
     }
   };
