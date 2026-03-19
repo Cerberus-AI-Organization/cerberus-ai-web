@@ -1,4 +1,12 @@
-import {BookText, BadgeCheck, ChevronsUpDown, LogOut, Moon, Settings, LucideAlignHorizontalDistributeCenter, Sun} from "lucide-react"
+import {
+  BookText,
+  BadgeCheck,
+  ChevronsUpDown,
+  LogOut,
+  Moon,
+  LucideAlignHorizontalDistributeCenter,
+  Sun
+} from "lucide-react"
 import {Avatar, AvatarFallback} from "@/components/ui/avatar.tsx"
 import {
   DropdownMenu,
@@ -21,6 +29,7 @@ import {useTheme} from "@/states/ThemeProvider.tsx";
 import type {User} from "@/types/user.ts";
 import {useLocation, useNavigate} from "react-router-dom";
 import {useState} from "react";
+import AccountDialog from "@/components/dialog/AccountDialog.tsx";
 
 type UserAvatarProps = {
   user: User;
@@ -48,14 +57,15 @@ export function SidebarUser({user}: {
   const {theme, setTheme} = useTheme();
   const {setOpenMobile} = useSidebar();
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [openAccount, setOpenAccount] = useState(false);
 
   const isAdmin = user.role === 'admin';
   const onAdminDashboard = location.pathname.startsWith('/dashboard/admin');
 
   const handlers = {
     website: () => navigate("/"),
-    account: () => toast.info("Account settings coming soon"),
-    settings: () => toast.info("Settings coming soon"),
+    account: () => setOpenAccount(true),
+    // settings: () => toast.info("Settings coming soon"),
     admin_dashboard: async () => {
       if (isAdmin) {
         navigate('/dashboard/admin');
@@ -71,79 +81,84 @@ export function SidebarUser({user}: {
   };
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              onClick={() => {
+    <>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                onClick={() => {
 
-              }}
-            >
-              <UserAvatar user={user}/>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs text-primary/75">{user.email}</span>
-              </div>
-              <ChevronsUpDown className="ml-auto size-4"/>
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
-            align="end"
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                }}
+              >
                 <UserAvatar user={user}/>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-xs text-primary/75">{user.email}</span>
                 </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator/>
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={handlers.website}>
-                <BookText/>
-                Website
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlers.account}>
-                <BadgeCheck/>
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlers.settings}>
-                <Settings/>
-                Settings
-              </DropdownMenuItem>
-              {isAdmin && !onAdminDashboard &&
-                <DropdownMenuItem onSelect={(e) => {
-                  e.preventDefault();
-                  setOpenMobile(false);
-                  setOpenDropdown(false);
-                  setTimeout(() => handlers.admin_dashboard(), 250);
-                }}>
-                  <LucideAlignHorizontalDistributeCenter/>
-                  Admin Dashboard
+                <ChevronsUpDown className="ml-auto size-4"/>
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+              side={isMobile ? "bottom" : "right"}
+              align="end"
+              sideOffset={4}
+            >
+              <DropdownMenuLabel className="p-0 font-normal">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                  <UserAvatar user={user}/>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="truncate text-xs text-primary/75">{user.email}</span>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator/>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handlers.website}>
+                  <BookText/>
+                  Website
                 </DropdownMenuItem>
-              }
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator/>
-            <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-              {theme === "light" ? <Sun/> : <Moon/>}
-              Toggle theme
-            </DropdownMenuItem>
-            <DropdownMenuSeparator/>
-            <DropdownMenuItem onClick={handlers.logout}>
-              <LogOut/>
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
+                <DropdownMenuItem onClick={handlers.account}>
+                  <BadgeCheck/>
+                  Account
+                </DropdownMenuItem>
+                {/*<DropdownMenuItem onClick={handlers.settings}>*/}
+                {/*  <Settings/>*/}
+                {/*  Settings*/}
+                {/*</DropdownMenuItem>*/}
+                {isAdmin && !onAdminDashboard &&
+                  <DropdownMenuItem onSelect={(e) => {
+                    e.preventDefault();
+                    setOpenMobile(false);
+                    setOpenDropdown(false);
+                    setTimeout(() => handlers.admin_dashboard(), 250);
+                  }}>
+                    <LucideAlignHorizontalDistributeCenter/>
+                    Admin Dashboard
+                  </DropdownMenuItem>
+                }
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator/>
+              <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+                {theme === "light" ? <Sun/> : <Moon/>}
+                Toggle theme
+              </DropdownMenuItem>
+              <DropdownMenuSeparator/>
+              <DropdownMenuItem onClick={handlers.logout}>
+                <LogOut/>
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </SidebarMenuItem>
+      </SidebarMenu>
+
+      {/* Account Dialog */}
+      <AccountDialog open={openAccount} onOpenChange={setOpenAccount} user={user}/>
+    </>
   )
 }

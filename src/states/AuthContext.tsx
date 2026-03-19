@@ -9,6 +9,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  fetchCurrentUser: () => Promise<User|null>;
   isAuthenticated: boolean;
   isFetching: boolean;
 }
@@ -26,7 +27,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
   });
   const [isFetching, setIsFetching] = useState(true);
 
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = async (): Promise<User|null> => {
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -40,6 +41,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
         } catch {
           console.error('Could not save token');
         }
+        return data.user;
       } else {
         logout();
       }
@@ -47,6 +49,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
       console.error('Error fetching user:', error);
       logout();
     }
+    return null;
   };
 
   const login = async (email: string, password: string) => {
@@ -99,7 +102,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token && !!user, isFetching }}>
+    <AuthContext.Provider value={{ user, token, login, logout, fetchCurrentUser, isAuthenticated: !!token && !!user, isFetching }}>
       {children}
     </AuthContext.Provider>
   );
