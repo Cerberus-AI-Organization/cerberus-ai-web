@@ -33,8 +33,13 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
       });
       if (response.ok) {
         const data = await response.json();
+        setToken(data.token);
         setUser(data.user);
-        console.log(data.user);
+        try {
+          localStorage.setItem('token', data.token);
+        } catch {
+          console.error('Could not save token');
+        }
       } else {
         logout();
       }
@@ -58,6 +63,7 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
 
     const data = await response.json();
     setToken(data.token);
+    setUser(data.user);
     try {
       localStorage.setItem('token', data.token);
     } catch {
@@ -77,18 +83,20 @@ export const AuthProvider: ({children}: { children: React.ReactNode }) => JSX.El
   };
 
   useEffect(() => {
+    setIsFetching(true);
+
     const getUser = async () => {
-      setIsFetching(true);
       await fetchCurrentUser();
       setIsFetching(false);
     }
 
     if (token) {
         getUser();
-    } else {
-        setIsFetching(false);
+        return
     }
-  }, [token]);
+
+    setIsFetching(false);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token && !!user, isFetching }}>
