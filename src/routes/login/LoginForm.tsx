@@ -82,9 +82,9 @@ export function LoginForm({
                   )}
                 </Button>
               </Field>
-              <FieldDescription className="text-center">
-                Don&apos;t have an account? <a href="#">Sign up</a>
-              </FieldDescription>
+              {/*<FieldDescription className="text-center">*/}
+              {/*  Don&apos;t have an account? <a href="#">Sign up</a>*/}
+              {/*</FieldDescription>*/}
             </FieldGroup>
           </form>
           <div className="bg-muted relative hidden overflow-hidden md:block">
@@ -105,10 +105,10 @@ export function LoginForm({
           </DialogHeader>
         </DialogContent>
       </Dialog>
-      <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
+      {/*<FieldDescription className="px-6 text-center">*/}
+      {/*  By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}*/}
+      {/*  and <a href="#">Privacy Policy</a>.*/}
+      {/*</FieldDescription>*/}
     </div>
   )
 }
