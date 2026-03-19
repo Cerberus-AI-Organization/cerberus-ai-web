@@ -1,7 +1,7 @@
 import {cn} from "@/lib/utils.ts"
 import {Button} from "@/components/ui/button.tsx"
 import {Card, CardContent} from "@/components/ui/card.tsx"
-import {Field, FieldDescription, FieldGroup, FieldLabel} from "@/components/ui/field.tsx"
+import {Field, FieldGroup, FieldLabel} from "@/components/ui/field.tsx"
 import {Input} from "@/components/ui/input.tsx"
 import {Loader2, Mail} from "lucide-react";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from "@/components/ui/dialog"
