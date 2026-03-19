@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { MessageSquare, Bug, Terminal, Shield, ChevronRight, Server, Database, Globe, Lock, Zap } from "lucide-react"
+import { Sun, Moon, MessageSquare, Bug, Terminal, Shield, ChevronRight, Server, Database, Globe, Lock, Zap } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import {useTheme} from "@/states/ThemeProvider.tsx";
 
 const MODES = [
   {
@@ -65,6 +66,7 @@ volumes:
 
 export default function Home() {
   const navigate = useNavigate()
+  const {theme, setTheme} = useTheme();
 
   return (
     <div className="h-screen overflow-y-auto bg-background text-foreground">
@@ -76,9 +78,15 @@ export default function Home() {
             <Shield className="h-5 w-5 text-primary" />
             <span className="font-semibold text-sm">CerberusAI</span>
           </div>
-          <Button size="sm" onClick={() => navigate("/dashboard")}>
-            Open Dashboard <ChevronRight className="h-3.5 w-3.5 ml-1" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => navigate("/dashboard")}>
+              Open Dashboard <ChevronRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+            <Button size="sm" variant="outline"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+              {theme === "dark" ? <Moon /> : <Sun />}
+            </Button>
+          </div>
         </div>
       </nav>
 
