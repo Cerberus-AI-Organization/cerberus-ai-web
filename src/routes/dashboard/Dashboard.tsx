@@ -32,7 +32,6 @@ import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext.tsx";
 import {API_URL} from "@/lib/api.ts";
 import {Textarea} from "@/components/ui/textarea.tsx";
-import {useIsMobile} from "@/hooks/use-mobile.ts";
 import {useSearchParams} from "react-router-dom";
 import {LLMConfigPopover, ragLevelToLimit, type RagLevel} from "./components/LLMConfigPopover.tsx"
 import {CHAT_MODES, MODE_ICONS, type ChatModeId} from "./types/chatMode"
@@ -59,13 +58,15 @@ function Dashboard() {
   const [selectedModel, setSelectedModel] = useState<string | null>(() => {
     return localStorage.getItem('preferredModel');
   })
-  const isMobile = useIsMobile()
   const [selectedChat, setSelectedChat] = useState<number>(Number(searchParams.get('chat')) || -1);
   const [messageInput, setMessageInput] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [gettingAiMessage, setGettingAiMessage] = useState(false)
   const [currentMessageState, setCurrentMessageState] = useState<AIState | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
+  const [inputHeight, setInputHeight] = useState(0);
 
   const getRandomWelcomeMessage = () => {
     const phrases = [
@@ -122,6 +123,19 @@ function Dashboard() {
     if (gettingAiMessage) return
     messagesEndRef.current?.scrollIntoView({behavior: 'smooth'})
   }, [messages])
+
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${ta.scrollHeight}px`;
+  }, [messageInput]);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      setInputHeight(inputRef.current.offsetHeight);
+    }
+  }, [messageInput]);
 
   const loadNodes = async () => {
     try {
@@ -502,7 +516,7 @@ function Dashboard() {
           </div>
         </header>
 
-        <div ref={printRef} className="flex-1 flex flex-col overflow-hidden">
+        <div ref={printRef} className="flex-1 flex flex-col overflow-hidden relative">
           <ScrollArea className="flex h-full w-full">
             {selectedChat !== -1 ? (
               <>
@@ -512,6 +526,7 @@ function Dashboard() {
                                    currentState={messages.indexOf(message) == messages.length - 1 ? currentMessageState : null}/>
                   </div>
                 ))}
+                <div style={{height: inputHeight}}/>
                 <div ref={messagesEndRef}/>
               </>
             ) : (
@@ -542,67 +557,74 @@ function Dashboard() {
           </ScrollArea>
         </div>
 
-        <div className="border-t p-4 flex-shrink-0">
-          <div className={`${isMobile ? "" : "flex"} w-full space-y-2 gap-2`}>
-            <LLMConfigPopover
-              nodes={nodes}
-              selectedNode={selectedNode}
-              onSelectNode={setSelectedNode}
-              models={models}
-              selectedModel={selectedModel}
-              onSelectModel={setSelectedModel}
-              ragLevel={ragLevel}
-              onRagLevelChange={setRagLevel}
-              ragAdvanced={useRagAdvanced}
-              onRagAdvancedChange={setUseRagAdvanced}
-              webSearch={useWebSearch}
-              onWebSearchChange={setUseWebSearch}
+        <div ref={inputRef} className="absolute bottom-0 left-0 right-0 p-4 flex justify-center bg-gradient-to-t from-background via-background/90 to-transparent pt-8">
+          <div className="w-full max-w-2xl border rounded-xl shadow-sm p-2 flex flex-col gap-2 bg-background">
+
+            {/* Row 1: Textarea */}
+            <Textarea
+              ref={textareaRef}
+              className="min-h-[3rem] resize-none border-none shadow-none focus-visible:ring-0 px-2 overflow-y-auto"
+              style={{ maxHeight: "22.5rem" }}
+              placeholder="Type your message..."
+              value={messageInput}
+              onChange={(e) => {
+                const oldMessageInput = messageInput;
+                setMessageInput(e.target.value);
+
+                if (oldMessageInput.trim().length == 0 && e.target.value.trim().length > 0) {
+                  if (selectedNode == -1) return;
+                  fetch(`${API_URL}/compute-nodes/${selectedNode}/preload`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ model: selectedModel }),
+                  }).then(async (res) => {
+                    if (res.ok) {
+                      const data = await res.json();
+                      console.log("Preloaded Model: ", data);
+                    } else {
+                      console.error("Failed to preload model");
+                    }
+                  });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
               disabled={gettingAiMessage}
             />
-            <div className="flex-1 flex gap-2">
-              <Textarea
-                className="max-h-xs min-h-0"
-                placeholder="Type your message..."
-                value={messageInput}
-                onChange={(e) => {
-                  const oldMessageInput = messageInput;
-                  setMessageInput(e.target.value);
 
-                  if (oldMessageInput.trim().length == 0 && e.target.value.trim().length > 0) {
-                    if (selectedNode == -1) return
-                    fetch(`${API_URL}/compute-nodes/${selectedNode}/preload`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                      },
-                      body: JSON.stringify({model: selectedModel}),
-                    }).then(async res => {
-                      if (res.ok) {
-                        const data = await res.json()
-                        console.log("Preloaded Model: ", data);
-                      } else {
-                        console.error("Failed to preload model");
-                      }
-                    })
-                  }
-
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
+            {/* Row 2: Popover + Send */}
+            <div className="flex items-center justify-between px-1">
+              <LLMConfigPopover
+                nodes={nodes}
+                selectedNode={selectedNode}
+                onSelectNode={setSelectedNode}
+                models={models}
+                selectedModel={selectedModel}
+                onSelectModel={setSelectedModel}
+                ragLevel={ragLevel}
+                onRagLevelChange={setRagLevel}
+                ragAdvanced={useRagAdvanced}
+                onRagAdvancedChange={setUseRagAdvanced}
+                webSearch={useWebSearch}
+                onWebSearchChange={setUseWebSearch}
                 disabled={gettingAiMessage}
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={gettingAiMessage || !messageInput.trim()}
+                size="sm"
               >
-                <Send className="h-4 w-4"/>
+                <Send className="h-4 w-4" />
               </Button>
             </div>
+
           </div>
         </div>
       </SidebarInset>
