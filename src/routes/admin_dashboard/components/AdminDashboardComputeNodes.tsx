@@ -171,6 +171,7 @@ function AdminDashboardComputeNodes() {
           },
           body: JSON.stringify({
             hostname: formData.hostname,
+            ip: formData.ip,
             port: port,
             priority: priority,
             max_ctx: maxCtx,
