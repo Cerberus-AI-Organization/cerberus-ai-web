@@ -55,9 +55,7 @@ function Dashboard() {
     const saved = localStorage.getItem('preferredComputeNode');
     return saved ? Number(saved) : null;
   })
-  const [selectedModel, setSelectedModel] = useState<string | null>(() => {
-    return localStorage.getItem('preferredModel');
-  })
+  const [selectedModel, setSelectedModel] = useState<string | null>(null)
   const [selectedChat, setSelectedChat] = useState<number>(Number(searchParams.get('chat')) || -1);
   const [messageInput, setMessageInput] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -197,10 +195,10 @@ function Dashboard() {
 
       const data: ComputeNodeModel[] = await response.json();
       setModels(data)
-      if (data.length > 0 && !selectedModel) {
+      if (data.length > 0) {
         const savedModel = localStorage.getItem('preferredModel');
-        const preferredModel = savedModel ? data.find(m => m.name === savedModel) : null;
-        setSelectedModel(preferredModel?.name || data[0].name);
+        const preferredModel = savedModel ? data.find(m => m.name === savedModel) ?? null : null;
+        setSelectedModel(preferredModel?.name || null);
       }
       // toast.success("Models loaded successfully");
     } catch {
