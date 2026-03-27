@@ -14,6 +14,7 @@ import type {ChatModeId} from "@/routes/dashboard/types/chatMode"
 interface UseMessagingOptions {
   selectedChat: number
   setSelectedChat: (id: number) => void
+  setGettingAiMessage: (value: boolean) => void
   selectedNode: number | null
   selectedModel: string | null
   ragLevel: RagLevel
@@ -31,6 +32,7 @@ interface UseMessagingOptions {
 
 export function useMessaging({
                                selectedChat, setSelectedChat,
+                               setGettingAiMessage,
                                selectedNode, selectedModel,
                                ragLevel, useRagAdvanced, selectedMode,
                                setMessages, setChats, loadMessages, scrollToBottom
@@ -42,7 +44,6 @@ export function useMessaging({
   // ─────────────────────────────────────────────────────────────────────────────
 
   const [messageInput, setMessageInput] = useState("")
-  const [gettingAiMessage, setGettingAiMessage] = useState(false)
   const [currentMessageState, setCurrentMessageState] = useState<AIState | null>(null)
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -248,7 +249,6 @@ export function useMessaging({
 
   return {
     messageInput,
-    gettingAiMessage,
     currentMessageState,
     handleSendMessage,
     handleInputChange,

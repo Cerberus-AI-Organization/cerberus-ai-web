@@ -9,7 +9,12 @@ import type {Chat, Message} from "@/types/chat.ts"
 // HOOK — Loads and manages nodes, models, chats and messages
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function useDashboardData(selectedChat: number) {
+interface UseDashboardDataOptions {
+  selectedChat: number
+  gettingAiMessage: boolean
+}
+
+export function useDashboardData({selectedChat, gettingAiMessage}: UseDashboardDataOptions) {
   const {isAuthenticated, token} = useAuth()
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -101,6 +106,7 @@ export function useDashboardData(selectedChat: number) {
 
   const loadMessages = async (chatId: number) => {
     if (chatId === -1) return
+    if (gettingAiMessage) return
 
     try {
       const res = await fetch(`${API_URL}/chats/${chatId}/messages`, {

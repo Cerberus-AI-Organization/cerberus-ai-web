@@ -60,6 +60,7 @@ function Dashboard() {
   const [isSharing, setIsSharing] = useState(false)
   const [welcomeMessage] = useState(randomWelcome)
   const [inputHeight, setInputHeight] = useState(0)
+  const [gettingAiMessage, setGettingAiMessage] = useState(false)
 
   // ─────────────────────────────────────────────────────────────────────────────
   // REFS
@@ -84,16 +85,16 @@ function Dashboard() {
     selectedNode, setSelectedNode,
     selectedModel, setSelectedModel,
     loadMessages,
-  } = useDashboardData(selectedChat)
+  } = useDashboardData({selectedChat, gettingAiMessage})
 
   const {
     messageInput,
-    gettingAiMessage,
     currentMessageState,
     handleSendMessage,
     handleInputChange,
   } = useMessaging({
     selectedChat, setSelectedChat,
+    setGettingAiMessage,
     selectedNode, selectedModel,
     ragLevel, useRagAdvanced, selectedMode,
     setMessages, setChats, loadMessages, scrollToBottom
