@@ -8,7 +8,7 @@ import {
   SidebarMenuItem, SidebarRail
 } from "@/components/ui/sidebar.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {MessageSquare, Plus} from "lucide-react";
+import {MessageSquare, MessageSquareMore, Plus} from "lucide-react";
 import {Separator} from "@/components/ui/separator.tsx";
 import {SidebarUser} from "@/components/sidebar/SidebarUser.tsx";
 import {useAuth} from "@/states/AuthContext.tsx";
@@ -16,13 +16,14 @@ import {Link} from "react-router-dom";
 import {type ChatModeId} from "../types/chatMode"
 import {ChatModeSwitcher} from "@/routes/dashboard/components/ChatModeSwitcher.tsx";
 
-function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedMode, onSelectMode}: {
+function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedMode, onSelectMode, isGenerating}: {
   chats: Chat[]
   selectedChat: number | null
   onSelectChat: (chatId: number) => void
   onCreateChat: () => void
   selectedMode: ChatModeId
-  onSelectMode: (mode: ChatModeId) => void
+  onSelectMode: (mode: ChatModeId) => void,
+  isGenerating: (chatId: number) => boolean,
 }) {
   const {user} = useAuth();
 
@@ -63,7 +64,10 @@ function ChatSidebar({chats, selectedChat, onSelectChat, onCreateChat, selectedM
                     }}
                     className={selectedChat === chat.id ? "text-primary font-medium" : ""}
                   >
-                    <MessageSquare className={selectedChat === chat.id ? "text-primary" : ""}/>
+                    {isGenerating(chat.id)
+                      ? <MessageSquareMore className={selectedChat === chat.id ? "text-primary" : ""}/>
+                      : <MessageSquare className={selectedChat === chat.id ? "text-primary" : ""}/>
+                    }
                     <span className="group-data-[collapsible=icon]:hidden truncate">
                       {chat.title}
                     </span>

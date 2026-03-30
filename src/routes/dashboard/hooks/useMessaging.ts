@@ -14,28 +14,33 @@ import type {ChatModeId} from "@/routes/dashboard/types/chatMode"
 interface UseMessagingOptions {
   selectedChat: number
   setSelectedChat: (id: number) => void
-  setGettingAiMessage: (value: boolean) => void
   selectedNode: number | null
   selectedModel: string | null
   ragLevel: RagLevel
   useRagAdvanced: boolean
   selectedMode: ChatModeId
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>
-  setChats: React.Dispatch<React.SetStateAction<Chat[]>>
-  loadMessages: (id: number) => Promise<void>
+  // Semantic callbacks
+  onMessagesUpdate: (chatId: number, updater: (msgs: Message[]) => Message[]) => void
+  onNewChatCreated: (chat: Chat) => void
+  onChatUpdate: (chat: Chat) => void
+  onGeneratingStart: (chatId: number) => void
+  onGeneratingEnd: (chatId: number) => void
+  onMessageStateChange: (chatId: number, state: AIState | null) => void
+  loadMessages: (chatId: number) => Promise<void>
   scrollToBottom: () => void
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HOOK — Handles message sending and SSE stream processing
+// HOOK — Message sending and SSE stream processing
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useMessaging({
                                selectedChat, setSelectedChat,
-                               setGettingAiMessage,
                                selectedNode, selectedModel,
                                ragLevel, useRagAdvanced, selectedMode,
-                               setMessages, setChats, loadMessages, scrollToBottom
+                               onMessagesUpdate, onNewChatCreated, onChatUpdate,
+                               onGeneratingStart, onGeneratingEnd, onMessageStateChange,
+                               loadMessages, scrollToBottom,
                              }: UseMessagingOptions) {
   const {token} = useAuth()
 
@@ -44,14 +49,13 @@ export function useMessaging({
   // ─────────────────────────────────────────────────────────────────────────────
 
   const [messageInput, setMessageInput] = useState("")
-  const [currentMessageState, setCurrentMessageState] = useState<AIState | null>(null)
 
   // ─────────────────────────────────────────────────────────────────────────────
   // OPTIMISTIC UI — Inject placeholder bubbles before the stream arrives
   // ─────────────────────────────────────────────────────────────────────────────
 
   const injectPlaceholderMessages = (chatId: number, content: string) => {
-    setMessages(prev => [
+    onMessagesUpdate(chatId, prev => [
       ...prev,
       {
         id: -1, chat_id: chatId, think: null,
@@ -67,7 +71,8 @@ export function useMessaging({
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // STREAM PROCESSOR — Handles each parsed JSON line from the SSE response
+  // STREAM PROCESSOR — Handles each parsed JSON line from the SSE response.
+  // Closes over all callbacks from the hook options — no extra params needed.
   // ─────────────────────────────────────────────────────────────────────────────
 
   const processStreamLine = (
@@ -75,32 +80,30 @@ export function useMessaging({
     chatId: number,
     setChatId: (id: number) => void,
     accumulated: {think: string; content: string},
-    scrollToBottom: () => void,
   ) => {
     let data: Record<string, unknown>
     try {
       data = JSON.parse(line)
     } catch {
-      return // Invalid JSON — caller will prepend line back into the buffer
+      return
     }
 
     if ("error" in data) throw new Error(String(data.error))
 
-    // Saved user message with a real DB id
+    // Saved user message — replace optimistic placeholder with real DB record
     if ("message" in data) {
-      setMessages(prev => {
+      onMessagesUpdate(chatId, prev => {
         const updated = [...prev]
         const idx = updated.map(m => m.sender_type).lastIndexOf("user")
         if (idx !== -1) updated[idx] = data.message as Message
         return updated
       })
-
       scrollToBottom()
 
       // Streaming thinking tokens
     } else if ("generated_think" in data) {
       accumulated.think += data.generated_think as string
-      setMessages(prev => {
+      onMessagesUpdate(chatId, prev => {
         const updated = [...prev]
         const idx = updated.map(m => m.sender_type).lastIndexOf("ai")
         if (idx !== -1) updated[idx] = {...updated[idx], think: accumulated.think}
@@ -110,7 +113,7 @@ export function useMessaging({
       // Streaming content tokens
     } else if ("generated_chunk" in data) {
       accumulated.content += data.generated_chunk as string
-      setMessages(prev => {
+      onMessagesUpdate(chatId, prev => {
         const updated = [...prev]
         const idx = updated.map(m => m.sender_type).lastIndexOf("ai")
         if (idx !== -1) updated[idx] = {...updated[idx], content: accumulated.content}
@@ -119,7 +122,7 @@ export function useMessaging({
 
       // Final AI message saved to DB — replace placeholder, keep accumulated think & rag
     } else if ("generated_message" in data) {
-      setMessages(prev => {
+      onMessagesUpdate(chatId, prev => {
         const updated = [...prev]
         const idx = updated.map(m => m.sender_type).lastIndexOf("ai")
         if (idx !== -1) {
@@ -132,56 +135,52 @@ export function useMessaging({
         }
         return updated
       })
-      setCurrentMessageState(null)
+      onMessageStateChange(chatId, null)
       scrollToBottom()
 
-      // New chat created or existing chat updated (e.g. title generated)
+      // New chat confirmed by server — migrate temp id -1 → real id
     } else if ("chat" in data) {
       const chat = data.chat as Chat
       if (chatId === -1) {
+        onNewChatCreated(chat) // migrates messages, generating state and adds to chatsMap
         setChatId(chat.id)
-        setChats(prev => [chat, ...prev])
-        setMessages(prev => prev.map(m => ({...m, chat_id: chat.id})))
         setSelectedChat(chat.id)
       } else {
-        setChats(prev => {
-          const updated = [...prev]
-          const idx = updated.findIndex(c => c.id === chatId)
-          if (idx !== -1) updated[idx] = chat
-          return updated
-        })
+        onChatUpdate(chat)
       }
 
       // RAG results attached to the last AI message
     } else if ("rag_results" in data) {
-      setMessages(prev => {
+      onMessagesUpdate(chatId, prev => {
         const updated = [...prev]
         const idx = updated.map(m => m.sender_type).lastIndexOf("ai")
         if (idx !== -1) updated[idx] = {...updated[idx], message_rag: data.rag_results as Message["message_rag"]}
         return updated
       })
 
-      // Generation state update (e.g. "searching", "thinking")
     } else if ("generation_state" in data) {
-      setCurrentMessageState(data.generation_state as AIState)
+      onMessageStateChange(chatId, data.generation_state as AIState)
     }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // SEND MESSAGE — Initiates the request and drives the stream reader loop
+  // SEND MESSAGE — Initiates the request and drives the stream reader loop.
+  // Each invocation is fully independent — multiple chats can stream in parallel.
   // ─────────────────────────────────────────────────────────────────────────────
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedNode || !selectedModel) return
+    const content = messageInput.trim()
+    if (!content || !selectedNode || !selectedModel) return
 
-    setGettingAiMessage(true)
-    setCurrentMessageState(null)
+    // Clear the input immediately so the user can start typing in another chat
+    setMessageInput("")
 
     let chatId = selectedChat
     const setChatId = (id: number) => { chatId = id }
     const accumulated = {think: "", content: ""}
 
-    injectPlaceholderMessages(chatId, messageInput)
+    injectPlaceholderMessages(chatId, content)
+    onGeneratingStart(chatId)
 
     try {
       const res = await fetch(`${API_URL}/chats/${chatId}/message`, {
@@ -192,7 +191,7 @@ export function useMessaging({
           model: selectedModel,
           mode: selectedMode,
           rag: {limit: ragLevelToLimit(ragLevel), use_advanced: useRagAdvanced, use_web_search: true},
-          content: messageInput,
+          content,
         }),
       })
 
@@ -213,7 +212,7 @@ export function useMessaging({
         buffer = lines.pop() ?? ""
 
         for (const line of lines) {
-          if (line.trim()) processStreamLine(line, chatId, setChatId, accumulated, scrollToBottom)
+          if (line.trim()) processStreamLine(line, chatId, setChatId, accumulated)
         }
       }
     } catch (err) {
@@ -221,8 +220,8 @@ export function useMessaging({
       toast.error("Failed to send message")
       await loadMessages(chatId)
     } finally {
-      setGettingAiMessage(false)
-      setMessageInput("")
+      // chatId here is the resolved id (real or -1 if chat creation failed)
+      onGeneratingEnd(chatId)
     }
   }
 
@@ -249,7 +248,6 @@ export function useMessaging({
 
   return {
     messageInput,
-    currentMessageState,
     handleSendMessage,
     handleInputChange,
   }

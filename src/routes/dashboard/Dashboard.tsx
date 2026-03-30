@@ -26,7 +26,7 @@ import {useDashboardData} from "./hooks/useDashboardData.ts"
 import {useMessaging} from "./hooks/useMessaging.ts"
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTS — Static data that does not depend on component state
+// CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
 const WELCOME_PHRASES = [
@@ -60,7 +60,6 @@ function Dashboard() {
   const [isSharing, setIsSharing] = useState(false)
   const [welcomeMessage] = useState(randomWelcome)
   const [inputHeight, setInputHeight] = useState(0)
-  const [gettingAiMessage, setGettingAiMessage] = useState(false)
 
   // ─────────────────────────────────────────────────────────────────────────────
   // REFS
@@ -76,29 +75,49 @@ function Dashboard() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // HOOKS — Data and messaging logic delegated to custom hooks
+  // HOOKS — Data and messaging logic
   // ─────────────────────────────────────────────────────────────────────────────
 
   const {
-    nodes, models, chats, setChats,
-    messages, setMessages,
+    nodes, models,
+    chatsList, chatsMap,
+    getMessages, updateMessagesForChat,
+    updateChat, removeChat, onNewChatCreated,
     selectedNode, setSelectedNode,
     selectedModel, setSelectedModel,
     loadMessages,
-  } = useDashboardData({selectedChat, gettingAiMessage})
+    isGenerating, startGenerating, stopGenerating,
+    getMessageState, setMessageState,
+  } = useDashboardData({selectedChat})
 
   const {
     messageInput,
-    currentMessageState,
     handleSendMessage,
     handleInputChange,
   } = useMessaging({
     selectedChat, setSelectedChat,
-    setGettingAiMessage,
     selectedNode, selectedModel,
     ragLevel, useRagAdvanced, selectedMode,
-    setMessages, setChats, loadMessages, scrollToBottom
+    onMessagesUpdate: updateMessagesForChat,
+    onNewChatCreated,
+    onChatUpdate: updateChat,
+    onGeneratingStart: startGenerating,
+    onGeneratingEnd: stopGenerating,
+    onMessageStateChange: setMessageState,
+    loadMessages, scrollToBottom,
   })
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // DERIVED — Shorthand values for the currently visible chat
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const messages = getMessages(selectedChat)
+  const currentMessageState = getMessageState(selectedChat)
+  const gettingAiMessage = isGenerating(selectedChat)
+
+  const selectedChatData = chatsMap.get(selectedChat)
+  const chatTitle = selectedChatData?.title ?? ""
+  const headerTitle = chatTitle.length > 30 ? chatTitle.slice(0, 30) + "..." : chatTitle || "New Chat"
 
   // ─────────────────────────────────────────────────────────────────────────────
   // PDF EXPORT
@@ -106,15 +125,15 @@ function Dashboard() {
 
   const handleExportToPDF = useReactToPrint({
     contentRef: printRef,
-    documentTitle: chats.find(c => c.id === selectedChat)?.title ?? "Chat",
+    documentTitle: selectedChatData?.title ?? "Chat",
     onAfterPrint: () => setIsSharing(false),
   })
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // EFFECTS — UI synchronisation (scroll, textarea resize, input height)
+  // EFFECTS — UI synchronisation
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // Auto-resize the textarea to fit its content
+  // Auto-resize textarea to fit its content
   useEffect(() => {
     const ta = textareaRef.current
     if (!ta) return
@@ -122,19 +141,22 @@ function Dashboard() {
     ta.style.height = `${ta.scrollHeight}px`
   }, [messageInput])
 
-  // Track input bar height so the message list spacer stays accurate
+  // Keep the spacer height in sync with the input bar
   useEffect(() => {
-    if (inputRef.current)
-      setInputHeight(inputRef.current.offsetHeight)
+    if (inputRef.current) setInputHeight(inputRef.current.offsetHeight)
   }, [messageInput])
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedChat]);
+
   // ─────────────────────────────────────────────────────────────────────────────
-  // CHAT MANAGEMENT — Create and delete chats
+  // CHAT MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────────────
 
   const handleCreateChat = () => {
     setSelectedChat(-1)
-    setMessages([])
+    // Messages for -1 are already empty (or cleared on delete) — no manual reset needed
   }
 
   const handleDeleteChat = async () => {
@@ -148,23 +170,14 @@ function Dashboard() {
       if (!res.ok) throw new Error()
 
       toast.success("Chat deleted successfully")
-      setChats(prev => prev.filter(c => c.id !== selectedChat))
+      removeChat(selectedChat)
     } catch {
       toast.error("Failed to delete chat")
     } finally {
       setDeleteDialogOpen(false)
-      setMessages([])
       setSelectedChat(-1)
     }
   }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // DERIVED DATA
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  const selectedChatData = chats.find(c => c.id === selectedChat)
-  const chatTitle = selectedChatData?.title ?? ""
-  const headerTitle = chatTitle.length > 30 ? chatTitle.slice(0, 30) + "..." : chatTitle || "New Chat"
 
   // ─────────────────────────────────────────────────────────────────────────────
   // RENDER
@@ -175,12 +188,13 @@ function Dashboard() {
 
       {/* Sidebar */}
       <ChatSidebar
-        chats={chats}
+        chats={chatsList}
         selectedChat={selectedChat}
         onSelectChat={setSelectedChat}
         onCreateChat={handleCreateChat}
         selectedMode={selectedMode}
         onSelectMode={setSelectedMode}
+        isGenerating={isGenerating}
       />
 
       <SidebarInset className="flex flex-col h-[100dvh] w-full">
@@ -230,7 +244,7 @@ function Dashboard() {
                   </div>
                 ))}
 
-                {/* Spacer to prevent messages from being hidden behind the input bar */}
+                {/* Spacer to prevent messages from hiding behind the input bar */}
                 <div style={{height: inputHeight}}/>
                 <div ref={messagesEndRef}/>
               </>
