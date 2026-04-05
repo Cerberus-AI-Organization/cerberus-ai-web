@@ -59,6 +59,16 @@ export function LLMConfigPopover({
                                      onWebSearchChange,
                                      disabled,
                                    }: ModelConfigPopoverProps) {
+
+  let disabledWebSearch = false;
+
+  if (selectedNode && selectedNode >= 0 && nodes[selectedNode]) {
+    if (nodes[selectedNode].api_type === "openai") {
+      if (webSearch) onWebSearchChange(false);
+      disabledWebSearch = true;
+    }
+  }
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -201,8 +211,9 @@ export function LLMConfigPopover({
             </div>
             <Switch
               id="web-search"
-              checked={webSearch}
+              checked={disabledWebSearch ? false : webSearch}
               onCheckedChange={onWebSearchChange}
+              disabled={disabledWebSearch}
             />
           </div>
         </div>

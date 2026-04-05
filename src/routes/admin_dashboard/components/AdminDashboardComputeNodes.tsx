@@ -35,6 +35,162 @@ import {LucideRefreshCw, CassetteTapeIcon, Pencil, Trash2} from "lucide-react";
 import type {ComputeNodeDetail, ComputeNodeModel} from "@/types/computeNode.ts";
 import {API_URL} from "@/lib/api.ts";
 import {Tooltip, TooltipTrigger, TooltipContent} from "@/components/ui/tooltip.tsx";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+
+type FormData = {
+  hostname: string;
+  api_type: string;
+  url: string;
+  api_key: string;
+  max_ctx: string;
+  max_layers_on_gpu: string;
+  priority: string;
+};
+
+function getDefaultFormData(): FormData {
+  return {
+    hostname: "",
+    api_type: "ollama",
+    url: "http://localhost:11434",
+    api_key: "",
+    max_ctx: "16384",
+    max_layers_on_gpu: "-1",
+    priority: "1",
+  };
+}
+
+function parseAndValidateFormData(formData: FormData) {
+  const priority = parseInt(formData.priority, 10);
+  const maxCtx = parseInt(formData.max_ctx, 10);
+  const maxLayers = parseInt(formData.max_layers_on_gpu, 10);
+
+  if (formData.url.trim() === "" || (
+    !formData.url.startsWith("http://") &&
+    !formData.url.startsWith("https://")
+  )) {
+    toast.error("URL must be a valid URL.");
+    return null;
+  }
+
+  if (formData.api_type !== "ollama" && formData.api_type !== "openai") {
+    toast.error("API type must be either 'ollama' or 'openai'.");
+    return null;
+  }
+
+  if ([priority, maxCtx, maxLayers].some(Number.isNaN)) {
+    toast.error("Priority, Max CTX and Max Layers on GPU must be numbers.");
+    return null;
+  }
+
+  return {
+    hostname: formData.hostname,
+    url: formData.url,
+    api_type: formData.api_type,
+    api_key: formData.api_key,
+    priority,
+    max_ctx: maxCtx,
+    max_layers_on_gpu: maxLayers,
+  };
+}
+
+function NodeFormFields({formData, setFormData}: {
+  formData: FormData;
+  setFormData: (data: FormData) => void;
+}) {
+  return (
+    <div className="grid gap-4 py-4">
+      <div className="grid gap-2">
+        <Label htmlFor="api-type">API Type</Label>
+        <Select value={formData.api_type} onValueChange={value => setFormData({...formData, api_type: value})}>
+          <SelectTrigger id="api-type" className="w-full">
+            <SelectValue placeholder="Select API Type"/>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ollama">Ollama</SelectItem>
+            <SelectItem value="openai">OpenAI</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="hostname">Hostname</Label>
+        <Input
+          id="hostname"
+          value={formData.hostname}
+          onChange={(e) => setFormData({...formData, hostname: e.target.value})}
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="url">Url</Label>
+        <Input
+          id="url"
+          value={formData.url}
+          onChange={(e) => setFormData({...formData, url: e.target.value})}
+        />
+      </div>
+      {formData.api_type === "openai" &&
+        <div className="grid gap-2">
+          <Label htmlFor="api_key">API Key</Label>
+          <Input
+            id="api_key"
+            value={formData.api_key}
+            onChange={(e) => setFormData({...formData, api_key: e.target.value})}
+          />
+        </div>
+      }
+      <div className="grid gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Label htmlFor="priority">Priority</Label>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Higher number will sort node higher and biggest will be used for knowledge creation.</p>
+          </TooltipContent>
+        </Tooltip>
+        <Input
+          id="priority"
+          value={formData.priority}
+          onChange={(e) => setFormData({...formData, priority: e.target.value})}
+        />
+      </div>
+      {formData.api_type === "ollama" && <>
+        <div className="grid gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Label htmlFor="max-ctx">Max CTX</Label>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Size of Context Window for models in tokens.</p>
+              <p>Higher number will cost more graphics memory and slowdown generation if used.</p>
+            </TooltipContent>
+          </Tooltip>
+          <Input
+            id="max-ctx"
+            value={formData.max_ctx}
+            onChange={(e) => setFormData({...formData, max_ctx: e.target.value})}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Label htmlFor="max-layers-on-gpu">Max Layers on Gpu</Label>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>The maximum number of layers that can be processed on the GPU.</p>
+              <p>Set to -1 to Automatic detection of the maximum number layers.</p>
+              <p>Use to sideload to CPU to lower the graphics memory usage.</p>
+            </TooltipContent>
+          </Tooltip>
+          <Input
+            id="max-layers-on-gpu"
+            value={formData.max_layers_on_gpu}
+            onChange={(e) => setFormData({...formData, max_layers_on_gpu: e.target.value})}
+          />
+        </div>
+      </>
+      }
+    </div>
+  );
+}
 
 function AdminDashboardComputeNodes() {
   const {isAuthenticated, token} = useAuth();
@@ -55,20 +211,12 @@ function AdminDashboardComputeNodes() {
     startTime: 0
   });
   const [selectedNode, setSelectedNode] = useState<ComputeNodeDetail | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ column: keyof ComputeNodeDetail; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    column: keyof ComputeNodeDetail;
+    direction: 'asc' | 'desc'
+  } | null>(null);
   const [filterText, setFilterText] = useState("");
-  const [formData, setFormData] = useState(getDefaultFormData());
-
-  function getDefaultFormData() {
-    return {
-      hostname: "",
-      ip: "",
-      port: "11434",
-      priority: "1",
-      max_ctx: "16384",
-      max_layers_on_gpu: "-1"
-    }
-  }
+  const [formData, setFormData] = useState<FormData>(getDefaultFormData());
 
   async function fetchNodes() {
     try {
@@ -86,7 +234,7 @@ function AdminDashboardComputeNodes() {
     } catch {
       toast.error("Error fetching nodes");
     }
-  };
+  }
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -100,40 +248,18 @@ function AdminDashboardComputeNodes() {
       setModelName("");
       setDownloadProgress(0);
       setDownloadStatus("");
-      setDownloadStats({
-        downloaded: 0,
-        total: 0,
-        startTime: 0
-      });
+      setDownloadStats({downloaded: 0, total: 0, startTime: 0});
     }
   }, [isPullOpen]);
 
   const handleCreate = async () => {
+    const payload = parseAndValidateFormData(formData);
+    if (!payload) return;
     try {
-      const port = parseInt(formData.port, 10);
-      const priority = parseInt(formData.priority, 10);
-      const maxCtx = parseInt(formData.max_ctx, 10);
-      const maxLayers = parseInt(formData.max_layers_on_gpu, 10);
-
-      if ([port, priority, maxCtx, maxLayers].some(Number.isNaN)) {
-        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
-        return;
-      }
-
       const response = await fetch(`${API_URL}/compute-nodes`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          hostname: formData.hostname,
-          ip: formData.ip,
-          port: port,
-          priority: priority,
-          max_ctx: maxCtx,
-          max_layers_on_gpu: maxLayers,
-        }),
+        headers: {"Content-Type": "application/json", Authorization: `Bearer ${token}`},
+        body: JSON.stringify(payload),
       });
       if (response.ok) {
         toast.success("Node created successfully");
@@ -150,35 +276,14 @@ function AdminDashboardComputeNodes() {
 
   const handleEdit = async () => {
     if (!selectedNode) return;
+    const payload = parseAndValidateFormData(formData);
+    if (!payload) return;
     try {
-      const port = parseInt(formData.port, 10);
-      const priority = parseInt(formData.priority, 10);
-      const maxCtx = parseInt(formData.max_ctx, 10);
-      const maxLayers = parseInt(formData.max_layers_on_gpu, 10);
-
-      if ([port, priority, maxCtx, maxLayers].some(Number.isNaN)) {
-        toast.error("Port, Priority, Max CTX and Max Layers on GPU must be numbers.");
-        return;
-      }
-
-      const response = await fetch(
-        `${API_URL}/compute-nodes/${selectedNode.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            hostname: formData.hostname,
-            ip: formData.ip,
-            port: port,
-            priority: priority,
-            max_ctx: maxCtx,
-            max_layers_on_gpu: maxLayers,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/compute-nodes/${selectedNode.id}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json", Authorization: `Bearer ${token}`},
+        body: JSON.stringify(payload),
+      });
       if (response.ok) {
         toast.success("Node updated successfully");
         setIsEditOpen(false);
@@ -195,15 +300,10 @@ function AdminDashboardComputeNodes() {
   const handleDelete = async () => {
     if (!selectedNode) return;
     try {
-      const response = await fetch(
-        `${API_URL}/compute-nodes/${selectedNode.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/compute-nodes/${selectedNode.id}`, {
+        method: "DELETE",
+        headers: {Authorization: `Bearer ${token}`},
+      });
       if (response.ok) {
         toast.success("Node deleted successfully");
         setIsDeleteOpen(false);
@@ -241,98 +341,7 @@ function AdminDashboardComputeNodes() {
             <DialogHeader>
               <DialogTitle>Create New Node</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="hostname">Hostname</Label>
-                <Input
-                  id="hostname"
-                  value={formData.hostname}
-                  onChange={(e) =>
-                    setFormData({...formData, hostname: e.target.value})
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="ip">IP Address</Label>
-                <Input
-                  id="ip"
-                  value={formData.ip}
-                  onChange={(e) =>
-                    setFormData({...formData, ip: e.target.value})
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="port">Port</Label>
-                <Input
-                  id="port"
-                  value={formData.port}
-                  onChange={(e) =>
-                    setFormData({...formData, port: e.target.value})
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label htmlFor="priotity">Priority</Label>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Higher number will sort node higher and biggest will be used for knowledge creation.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Input
-                  id="priotity"
-                  value={formData.priority}
-                  onChange={(e) =>
-                    setFormData({...formData, priority: e.target.value})
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label htmlFor="max-ctx">Max CTX</Label>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Size of Context Window for models in tokens.</p>
-                    <p>Higher number will cost more graphics memory and slowdown generation if used.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Input
-                  id="max-ctx"
-                  value={formData.max_ctx}
-                  onChange={(e) =>
-                    setFormData({...formData, max_ctx: e.target.value})
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label htmlFor="max-layers-on-gpu">Max Layers on Gpu</Label>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      The maximum number of layers that can be processed on the GPU.
-                    </p>
-                    <p>
-                      Set to -1 to Automatic detection of the maximum number layers.
-                    </p>
-                    <p>
-                      Use to sideload to CPU to lower the graphics memory usage.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <Input
-                  id="max-layers-on-gpu"
-                  value={formData.max_layers_on_gpu}
-                  onChange={(e) =>
-                    setFormData({...formData, max_layers_on_gpu: e.target.value})
-                  }
-                />
-              </div>
-            </div>
+            <NodeFormFields formData={formData} setFormData={setFormData}/>
             <Button onClick={handleCreate}>Create</Button>
           </DialogContent>
         </Dialog>
@@ -358,7 +367,7 @@ function AdminDashboardComputeNodes() {
                 Hostname {sortConfig?.column === 'hostname' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead>IP</TableHead>
-              <TableHead>Port</TableHead>
+              <TableHead>API Type</TableHead>
               <TableHead onClick={() => {
                 setSortConfig(sortConfig?.column === 'status' && sortConfig.direction === 'asc'
                   ? {column: 'status', direction: 'desc'}
@@ -399,8 +408,8 @@ function AdminDashboardComputeNodes() {
               .map((node) => (
                 <TableRow key={node.id}>
                   <TableCell>{node.hostname}</TableCell>
-                  <TableCell>{node.ip}</TableCell>
-                  <TableCell>{node.port}</TableCell>
+                  <TableCell>{node.url}</TableCell>
+                  <TableCell>{node.api_type}</TableCell>
                   <TableCell>{node.status}</TableCell>
                   <TableCell>{new Date(node.created_at).toLocaleString(navigator.language, {
                     year: "numeric",
@@ -417,7 +426,7 @@ function AdminDashboardComputeNodes() {
                       onClick={async () => {
                         if (node.status === "offline") {
                           toast.error("Compute Node is Offline");
-                          return
+                          return;
                         }
                         setSelectedNode(node);
                         try {
@@ -442,8 +451,9 @@ function AdminDashboardComputeNodes() {
                         setSelectedNode(node);
                         setFormData({
                           hostname: node.hostname,
-                          ip: node.ip,
-                          port: node.port.toString(),
+                          url: node.url,
+                          api_type: node.api_type,
+                          api_key: node.api_key ?? "",
                           priority: node.priority.toString(),
                           max_ctx: node.max_ctx.toString(),
                           max_layers_on_gpu: node.max_layers_on_gpu.toString()
@@ -474,96 +484,7 @@ function AdminDashboardComputeNodes() {
           <DialogHeader>
             <DialogTitle>Edit Node</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-hostname">Hostname</Label>
-              <Input
-                id="edit-hostname"
-                value={formData.hostname}
-                onChange={(e) =>
-                  setFormData({...formData, hostname: e.target.value})
-                }
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-ip">IP Address</Label>
-              <Input
-                id="edit-ip"
-                value={formData.ip}
-                onChange={(e) => setFormData({...formData, ip: e.target.value})}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-port">Port</Label>
-              <Input
-                id="edit-port"
-                value={formData.port}
-                onChange={(e) =>
-                  setFormData({...formData, port: e.target.value})
-                }
-              />
-            </div>
-            <div className="grid gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Label htmlFor="edit-priotity">Priority</Label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Higher number will sort node higher and biggest will be used for knowledge creation.</p>
-                </TooltipContent>
-              </Tooltip>
-              <Input
-                id="edit-priotity"
-                value={formData.priority}
-                onChange={(e) =>
-                  setFormData({...formData, priority: e.target.value})
-                }
-              />
-            </div>
-            <div className="grid gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Label htmlFor="edit-max-ctx">Max CTX</Label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Size of Context Window for models in tokens.</p>
-                  <p>Higher number will cost more graphics memory and slowdown generation if used.</p>
-                </TooltipContent>
-              </Tooltip>
-              <Input
-                id="edit-max-ctx"
-                value={formData.max_ctx}
-                onChange={(e) =>
-                  setFormData({...formData, max_ctx: e.target.value})
-                }
-              />
-            </div>
-            <div className="grid gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Label htmlFor="edit-max-layers-on-gpu">Max Layers on Gpu</Label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    The maximum number of layers that can be processed on the GPU.
-                  </p>
-                  <p>
-                    Set to -1 to Automatic detection of the maximum number layers.
-                  </p>
-                  <p>
-                    Use to sideload to CPU to lower the graphics memory usage.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-              <Input
-                id="edit-max-layers-on-gpu"
-                value={formData.max_layers_on_gpu}
-                onChange={(e) =>
-                  setFormData({...formData, max_layers_on_gpu: e.target.value})
-                }
-              />
-            </div>
-          </div>
+          <NodeFormFields formData={formData} setFormData={setFormData}/>
           <Button onClick={handleEdit}>Save Changes</Button>
         </DialogContent>
       </Dialog>
@@ -595,55 +516,57 @@ function AdminDashboardComputeNodes() {
                 <span>{model.name}</span>
                 <div className="flex items-center gap-4">
                   <span>{(model.size / 1024 / 1024).toFixed(2)} MB</span>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="icon">
-                        <Trash2 className="size-4"/>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete model?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete the model {model.name}.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={async () => {
-                          try {
-                            const response = await fetch(
-                              `${API_URL}/compute-nodes/${selectedNode?.id}/models/${model.name}`,
-                              {
-                                method: "DELETE",
-                                headers: {
-                                  Authorization: `Bearer ${token}`,
-                                },
+                  {selectedNode?.api_type === "ollama" &&
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon">
+                          <Trash2 className="size-4"/>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete model?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the model {model.name}.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={async () => {
+                            try {
+                              const response = await fetch(
+                                `${API_URL}/compute-nodes/${selectedNode?.id}/models/${model.name}`,
+                                {
+                                  method: "DELETE",
+                                  headers: {Authorization: `Bearer ${token}`},
+                                }
+                              );
+                              if (response.ok) {
+                                toast.success("Model deleted successfully");
+                                setModels(models.filter(m => m.name !== model.name));
+                              } else {
+                                toast.error("Failed to delete model");
                               }
-                            );
-                            if (response.ok) {
-                              toast.success("Model deleted successfully");
-                              const updatedModels = models.filter(m => m.name !== model.name);
-                              setModels(updatedModels);
-                            } else {
-                              toast.error("Failed to delete model");
+                            } catch {
+                              toast.error("Error deleting model");
                             }
-                          } catch {
-                            toast.error("Error deleting model");
-                          }
-                        }}>Delete</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          }}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  }
                 </div>
               </div>
-
             ))}
           </div>
-          <Button onClick={() => {
-            setPullOpen(true);
-            setIsModelsOpen(false);
-          }}>Pull New Model</Button>
+          {selectedNode?.api_type === "ollama" &&
+            <Button onClick={() => {
+              setPullOpen(true);
+              setIsModelsOpen(false);
+            }}>
+              Pull New Model
+            </Button>
+          }
         </DialogContent>
       </Dialog>
 
@@ -674,26 +597,17 @@ function AdminDashboardComputeNodes() {
                   <div>
                     Remaining time:{' '}
                     {(() => {
-                      const { startTime, downloaded, total } = downloadStats;
-
+                      const {startTime, downloaded, total} = downloadStats;
                       const elapsedMs = Date.now() - startTime;
                       if (elapsedMs <= 0 || downloaded <= 0 || total <= 0 || downloaded >= total) {
                         return 'Calculating...';
                       }
-
-                      // Compute bytes per second instead of per millisecond
                       const bytesPerSec = downloaded / (elapsedMs / 1000);
-
-                      // Avoid division by zero or tiny numbers
                       if (bytesPerSec < 1) return 'Calculating...';
-
-                      const remainingBytes = total - downloaded;
-                      const remainingSeconds = Math.ceil(remainingBytes / bytesPerSec);
-
+                      const remainingSeconds = Math.ceil((total - downloaded) / bytesPerSec);
                       const hours = Math.floor(remainingSeconds / 3600);
                       const minutes = Math.floor((remainingSeconds % 3600) / 60);
                       const seconds = remainingSeconds % 60;
-
                       if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
                       if (minutes > 0) return `${minutes}m ${seconds}s`;
                       return `${seconds}s`;
@@ -726,11 +640,7 @@ function AdminDashboardComputeNodes() {
                   if (!reader) throw new Error("No reader available");
 
                   setDownloadStatus("Starting pull...");
-                  setDownloadStats({
-                    downloaded: 0,
-                    total: 0,
-                    startTime: Date.now()
-                  });
+                  setDownloadStats({downloaded: 0, total: 0, startTime: Date.now()});
 
                   while (true) {
                     const {done, value} = await reader.read();
@@ -752,17 +662,9 @@ function AdminDashboardComputeNodes() {
                         setDownloadStatus(data.status);
                         if (data.total && data.completed) {
                           setDownloadProgress((data.completed / data.total) * 100);
-                          setDownloadStats(prev => ({
-                            ...prev,
-                            downloaded: data.completed,
-                            total: data.total,
-                          }));
+                          setDownloadStats(prev => ({...prev, downloaded: data.completed, total: data.total}));
                         } else {
-                          setDownloadStats(prev => ({
-                            ...prev,
-                            downloaded: 0,
-                            total: 0,
-                          }));
+                          setDownloadStats(prev => ({...prev, downloaded: 0, total: 0}));
                         }
                       } catch {
                         console.error('Failed to parse line:', line);
