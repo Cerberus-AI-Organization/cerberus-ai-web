@@ -31,7 +31,7 @@ import {Progress} from "@/components/ui/progress";
 import {toast} from "sonner";
 import {useAuth} from "@/states/AuthContext";
 import {Card} from "@/components/ui/card.tsx";
-import {LucideRefreshCw, CassetteTapeIcon, Pencil, Trash2} from "lucide-react";
+import {LucideRefreshCw, CassetteTapeIcon, Pencil, Trash2, Loader2} from "lucide-react";
 import type {ComputeNodeDetail, ComputeNodeModel} from "@/types/computeNode.ts";
 import {API_URL} from "@/lib/api.ts";
 import {Tooltip, TooltipTrigger, TooltipContent} from "@/components/ui/tooltip.tsx";
@@ -217,6 +217,8 @@ function AdminDashboardComputeNodes() {
   } | null>(null);
   const [filterText, setFilterText] = useState("");
   const [formData, setFormData] = useState<FormData>(getDefaultFormData());
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   async function fetchNodes() {
     try {
@@ -255,6 +257,7 @@ function AdminDashboardComputeNodes() {
   const handleCreate = async () => {
     const payload = parseAndValidateFormData(formData);
     if (!payload) return;
+    setIsCreating(true);
     try {
       const response = await fetch(`${API_URL}/compute-nodes`, {
         method: "POST",
@@ -271,6 +274,8 @@ function AdminDashboardComputeNodes() {
     } catch (error) {
       console.error("Error creating node:", error);
       toast.error("Error creating node");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -278,6 +283,7 @@ function AdminDashboardComputeNodes() {
     if (!selectedNode) return;
     const payload = parseAndValidateFormData(formData);
     if (!payload) return;
+    setIsEditing(true);
     try {
       const response = await fetch(`${API_URL}/compute-nodes/${selectedNode.id}`, {
         method: "PUT",
@@ -294,6 +300,8 @@ function AdminDashboardComputeNodes() {
     } catch (error) {
       console.error("Error updating node:", error);
       toast.error("Error updating node");
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -342,7 +350,10 @@ function AdminDashboardComputeNodes() {
               <DialogTitle>Create New Node</DialogTitle>
             </DialogHeader>
             <NodeFormFields formData={formData} setFormData={setFormData}/>
-            <Button onClick={handleCreate}>Create</Button>
+            <Button onClick={handleCreate} disabled={isCreating}>
+              {isCreating && <Loader2 className="size-4 animate-spin"/>}
+              Create
+            </Button>
           </DialogContent>
         </Dialog>
       </div>
@@ -485,7 +496,10 @@ function AdminDashboardComputeNodes() {
             <DialogTitle>Edit Node</DialogTitle>
           </DialogHeader>
           <NodeFormFields formData={formData} setFormData={setFormData}/>
-          <Button onClick={handleEdit}>Save Changes</Button>
+          <Button onClick={handleEdit} disabled={isEditing}>
+            {isEditing && <Loader2 className="size-4 animate-spin"/>}
+            Save Changes
+          </Button>
         </DialogContent>
       </Dialog>
 

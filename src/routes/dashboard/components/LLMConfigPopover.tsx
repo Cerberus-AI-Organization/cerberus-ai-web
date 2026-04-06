@@ -60,14 +60,8 @@ export function LLMConfigPopover({
                                      disabled,
                                    }: ModelConfigPopoverProps) {
 
-  let disabledWebSearch = false;
-
-  if (selectedNode && selectedNode >= 0 && nodes[selectedNode]) {
-    if (nodes[selectedNode].api_type === "openai") {
-      if (webSearch) onWebSearchChange(false);
-      disabledWebSearch = true;
-    }
-  }
+  const selectedNodeObj = selectedNode !== null ? nodes.find(n => n.id === selectedNode) : undefined;
+  const disabledWebSearch = selectedNodeObj?.api_type === "openai";
 
   return (
     <Popover>
