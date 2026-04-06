@@ -197,9 +197,12 @@ export function useDashboardData({selectedChat}: UseDashboardDataOptions) {
         const saved = localStorage.getItem("preferredModel")
         const preferred = saved ? data.find(m => m.name === saved) ?? null : null
         setSelectedModel(preferred?.name ?? null)
+      } else {
+        setSelectedModel(null)
       }
     } catch {
       toast.error("Failed to load models")
+      setSelectedModel(null)
     }
   }
 
