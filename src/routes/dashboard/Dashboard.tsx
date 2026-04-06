@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef} from "react"
-import {Send, Trash2, Share2, Loader2} from "lucide-react"
+import {Send, Trash2, Share2, Loader2, AlertTriangle, RefreshCw} from "lucide-react"
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
@@ -11,6 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {ScrollArea} from "@/components/ui/scroll-area"
+import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert"
 import {Textarea} from "@/components/ui/textarea"
 import {toast} from "sonner"
 import {useAuth} from "@/states/AuthContext.tsx"
@@ -80,6 +81,7 @@ function Dashboard() {
 
   const {
     nodes, models,
+    apiComponents,
     chatsList, chatsMap,
     getMessages, updateMessagesForChat,
     updateChat, removeChat, onNewChatCreated,
@@ -230,6 +232,26 @@ function Dashboard() {
           </div>
         </header>
 
+        {/* Knowledge status banner */}
+        {(apiComponents?.knowledge === "syncing" || apiComponents?.knowledge === "empty") && (
+          <div className="flex-shrink-0 px-4 py-2 border-b">
+            <Alert className="border-amber-500/50 bg-amber-500/10 [&>svg]:text-amber-500">
+              {apiComponents.knowledge === "syncing"
+                ? <RefreshCw className="h-4 w-4 animate-spin"/>
+                : <AlertTriangle className="h-4 w-4"/>
+              }
+              <AlertTitle className="text-amber-700 dark:text-amber-400">
+                {apiComponents.knowledge === "syncing" ? "Knowledge Base Syncing" : "Knowledge Base Empty"}
+              </AlertTitle>
+              <AlertDescription>
+                {apiComponents.knowledge === "syncing"
+                  ? "The knowledge base is currently syncing. RAG features may return incomplete results."
+                  : "The knowledge base is disabled. Results will be worse."}
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {/* Message list */}
         <div ref={printRef} className="flex-1 flex flex-col overflow-hidden relative">
           <ScrollArea className="flex h-full w-full">
@@ -316,6 +338,7 @@ function Dashboard() {
                 onRagAdvancedChange={setUseRagAdvanced}
                 webSearch={useWebSearch}
                 onWebSearchChange={setUseWebSearch}
+                braveWebSearchConfigured={apiComponents?.brave_websearch === "configured"}
                 disabled={gettingAiMessage}
               />
               <Button

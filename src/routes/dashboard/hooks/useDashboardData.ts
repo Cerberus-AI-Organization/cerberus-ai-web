@@ -10,6 +10,11 @@ import type {AIState} from "@/routes/dashboard/components/MessageBubble.tsx"
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface ApiComponents {
+  brave_websearch?: string
+  knowledge?: string
+}
+
 interface UseDashboardDataOptions {
   selectedChat: number
 }
@@ -43,6 +48,8 @@ export function useDashboardData({selectedChat}: UseDashboardDataOptions) {
 
   // Ref mirror of generatingChats — avoids stale closures in loadMessages
   const generatingRef = useRef<number[]>([])
+
+  const [apiComponents, setApiComponents] = useState<ApiComponents | null>(null)
 
   const [selectedNode, setSelectedNode] = useState<number | null>(() => {
     const saved = localStorage.getItem("preferredComputeNode")
@@ -151,6 +158,17 @@ export function useDashboardData({selectedChat}: UseDashboardDataOptions) {
   // FETCHERS
   // ─────────────────────────────────────────────────────────────────────────────
 
+  const loadApiStatus = async () => {
+    try {
+      const res = await fetch(`${API_URL}/`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setApiComponents(data.components ?? null)
+    } catch {
+      // silently fail — status banner is non-critical
+    }
+  }
+
   const loadNodes = async () => {
     try {
       const res = await fetch(`${API_URL}/compute-nodes`, {
@@ -246,6 +264,7 @@ export function useDashboardData({selectedChat}: UseDashboardDataOptions) {
   // Initial load + periodic node polling every 15 s
   useEffect(() => {
     if (!isAuthenticated) return
+    loadApiStatus()
     loadNodes()
     loadChats()
 
@@ -278,6 +297,7 @@ export function useDashboardData({selectedChat}: UseDashboardDataOptions) {
 
   return {
     nodes, models,
+    apiComponents,
     chatsList, chatsMap,
     getMessages,
     addChat, updateChat, removeChat, onNewChatCreated,

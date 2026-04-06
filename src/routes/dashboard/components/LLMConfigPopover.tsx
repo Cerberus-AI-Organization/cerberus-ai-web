@@ -40,6 +40,7 @@ interface ModelConfigPopoverProps {
   onRagAdvancedChange: (val: boolean) => void
   webSearch: boolean
   onWebSearchChange: (val: boolean) => void
+  braveWebSearchConfigured?: boolean
   disabled?: boolean
 }
 
@@ -57,11 +58,12 @@ export function LLMConfigPopover({
                                      onRagAdvancedChange,
                                      webSearch,
                                      onWebSearchChange,
+                                     braveWebSearchConfigured,
                                      disabled,
                                    }: ModelConfigPopoverProps) {
 
   const selectedNodeObj = selectedNode !== null ? nodes.find(n => n.id === selectedNode) : undefined;
-  const disabledWebSearch = selectedNodeObj?.api_type === "openai";
+  const disabledWebSearch = selectedNodeObj?.api_type === "openai" && !braveWebSearchConfigured;
 
   return (
     <Popover>
