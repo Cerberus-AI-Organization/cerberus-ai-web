@@ -1,5 +1,6 @@
 import {useState} from "react"
 import {toast} from "sonner"
+import {io} from "socket.io-client"
 import {useAuth} from "@/states/AuthContext.tsx"
 import {API_URL} from "@/lib/api.ts"
 import type {Chat, Message} from "@/types/chat.ts"
@@ -78,7 +79,6 @@ export function useMessaging({
   const processStreamLine = (
     line: string,
     chatId: number,
-    setChatId: (id: number) => void,
     accumulated: {think: string; content: string},
   ) => {
     let data: Record<string, unknown>
@@ -90,18 +90,8 @@ export function useMessaging({
 
     if ("error" in data) throw new Error(String(data.error))
 
-    // Saved user message — replace optimistic placeholder with real DB record
-    if ("message" in data) {
-      onMessagesUpdate(chatId, prev => {
-        const updated = [...prev]
-        const idx = updated.map(m => m.sender_type).lastIndexOf("user")
-        if (idx !== -1) updated[idx] = data.message as Message
-        return updated
-      })
-      scrollToBottom()
-
-      // Streaming thinking tokens
-    } else if ("generated_think" in data) {
+    // Streaming thinking tokens
+    if ("generated_think" in data) {
       accumulated.think += data.generated_think as string
       onMessagesUpdate(chatId, prev => {
         const updated = [...prev]
@@ -138,17 +128,6 @@ export function useMessaging({
       onMessageStateChange(chatId, null)
       scrollToBottom()
 
-      // New chat confirmed by server — migrate temp id -1 → real id
-    } else if ("chat" in data) {
-      const chat = data.chat as Chat
-      if (chatId === -1) {
-        onNewChatCreated(chat) // migrates messages, generating state and adds to chatsMap
-        setChatId(chat.id)
-        setSelectedChat(chat.id)
-      } else {
-        onChatUpdate(chat)
-      }
-
       // RAG results attached to the last AI message
     } else if ("rag_results" in data) {
       onMessagesUpdate(chatId, prev => {
@@ -160,6 +139,9 @@ export function useMessaging({
 
     } else if ("generation_state" in data) {
       onMessageStateChange(chatId, data.generation_state as AIState)
+    } else if ("chat" in data) {
+      const chat = data.chat as Chat
+      onChatUpdate(chat)
     }
   }
 
@@ -197,30 +179,71 @@ export function useMessaging({
 
       if (!res.ok) throw new Error("Failed to send message")
 
-      const reader = res.body?.pipeThrough(new TextDecoderStream()).getReader()
-      if (!reader) throw new Error("Failed to read response stream")
-
-      // Read chunks and process complete newline-delimited JSON lines
-      let buffer = ""
-      while (true) {
-        const {value, done} = await reader.read()
-        if (done) break
-        if (!value) continue
-
-        buffer += value
-        const lines = buffer.split("\n")
-        buffer = lines.pop() ?? ""
-
-        for (const line of lines) {
-          if (line.trim()) processStreamLine(line, chatId, setChatId, accumulated)
-        }
+      const {jobId, chat, userMessage} = await res.json() as {
+        jobId: string
+        chat: Chat
+        userMessage: Message
       }
+
+      // Apply the confirmed user message and chat from the POST response
+      if (chatId === -1) {
+        onNewChatCreated(chat)  // migrates messages keyed by -1 → chat.id
+        setChatId(chat.id)
+        setSelectedChat(chat.id)
+        chatId = chat.id
+      } else {
+        onChatUpdate(chat)
+      }
+      onMessagesUpdate(chatId, prev => {
+        const updated = [...prev]
+        const idx = updated.map(m => m.sender_type).lastIndexOf("user")
+        if (idx !== -1) updated[idx] = userMessage
+        return updated
+      })
+      scrollToBottom()
+
+      await new Promise<void>((resolve, reject) => {
+        const socket = io(API_URL, {auth: {token}})
+        let lastProcessedSeq = -1
+
+        socket.on("connect", () => {
+          socket.emit("subscribe", {jobId})
+        })
+
+        socket.on("chunk", (chunk: Record<string, unknown>) => {
+          const seq = typeof chunk.seq === "number" ? chunk.seq : -1
+          if (seq <= lastProcessedSeq) return;
+          lastProcessedSeq = seq
+          processStreamLine(JSON.stringify(chunk.data), chatId, accumulated)
+        })
+
+        socket.on("sync_complete", ({lastSeq}: {lastSeq: number}) => {
+          lastProcessedSeq = Math.max(lastProcessedSeq, lastSeq)
+        })
+
+        socket.on("job_complete", () => {
+          socket.emit("unsubscribe", {jobId})
+          socket.disconnect()
+          resolve()
+        })
+
+        socket.on("job_error", ({error}: {error: string}) => {
+          socket.emit("unsubscribe", {jobId})
+          socket.disconnect()
+          reject(new Error(error))
+        })
+
+        // Only reject on a permanent connection failure (after all retries exhausted)
+        socket.io.on("error", (err) => {
+          socket.disconnect()
+          reject(err)
+        })
+      })
     } catch (err) {
       console.error(err)
       toast.error("Failed to send message")
       await loadMessages(chatId)
     } finally {
-      // chatId here is the resolved id (real or -1 if chat creation failed)
       onGeneratingEnd(chatId)
     }
   }
